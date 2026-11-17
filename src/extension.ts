@@ -1,31 +1,41 @@
 import * as vscode from 'vscode';
-import { closeOverlay, showOverlay } from './overlay';
+import { closeOverlay, showOverlay, type Presentation } from './overlay';
 import { clearQuickSearchHistory, openQuickSearch } from './quickpick';
 
 type UiMode = 'overlay' | 'quickpick';
 
 export function activate(context: vscode.ExtensionContext): void {
+  const initial = (): string => selectionText();
+
   context.subscriptions.push(
-    vscode.commands.registerCommand('vsSearch.search', () => dispatch(context)),
+    vscode.commands.registerCommand('vsSearch.search', () => {
+      if (uiMode() === 'quickpick') {
+        void openQuickSearch(context, { initial: initial() });
+      } else {
+        showOverlay(context, { initial: initial(), mode: presentationMode() });
+      }
+    }),
     vscode.commands.registerCommand('vsSearch.overlay', () =>
-      showOverlay(context, { initial: selectionText() })
+      showOverlay(context, { initial: initial(), mode: 'overlay' })
+    ),
+    vscode.commands.registerCommand('vsSearch.page', () =>
+      showOverlay(context, { initial: initial(), mode: 'page' })
     ),
     vscode.commands.registerCommand('vsSearch.quickPick', () =>
-      openQuickSearch(context, { initial: selectionText() })
+      openQuickSearch(context, { initial: initial() })
     ),
     vscode.commands.registerCommand('vsSearch.searchSelection', () => {
-      const initial = selectionText();
-      if (uiMode() === 'overlay') {
-        showOverlay(context, { initial });
+      if (uiMode() === 'quickpick') {
+        void openQuickSearch(context, { initial: initial() });
       } else {
-        void openQuickSearch(context, { initial });
+        showOverlay(context, { initial: initial(), mode: presentationMode() });
       }
     }),
     vscode.commands.registerCommand('vsSearch.searchToSide', () => {
-      if (uiMode() === 'overlay') {
-        showOverlay(context, { initial: selectionText() });
+      if (uiMode() === 'quickpick') {
+        void openQuickSearch(context, { toSide: true, initial: initial() });
       } else {
-        void openQuickSearch(context, { toSide: true, initial: selectionText() });
+        showOverlay(context, { initial: initial(), mode: presentationMode() });
       }
     }),
     vscode.commands.registerCommand('vsSearch.close', () => closeOverlay()),
@@ -37,17 +47,16 @@ export function deactivate(): void {
   closeOverlay();
 }
 
-function dispatch(context: vscode.ExtensionContext): void {
-  const initial = selectionText();
-  if (uiMode() === 'overlay') {
-    showOverlay(context, { initial });
-  } else {
-    void openQuickSearch(context, { initial });
-  }
+function config(): vscode.WorkspaceConfiguration {
+  return vscode.workspace.getConfiguration('vsSearch');
 }
 
 function uiMode(): UiMode {
-  return vscode.workspace.getConfiguration('vsSearch').get<UiMode>('ui', 'overlay');
+  return config().get<UiMode>('ui', 'overlay');
+}
+
+function presentationMode(): Presentation {
+  return config().get<Presentation>('presentation', 'overlay');
 }
 
 function selectionText(): string {
@@ -58,7 +67,7 @@ function selectionText(): string {
   for (const selection of editor.selections) {
     const text = editor.document.getText(selection);
     if (text.trim()) {
-      // The overlay input is single-line.
+      // The search input is single-line.
       return text.split(/\r?\n/)[0].trim();
     }
   }

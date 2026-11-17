@@ -5,7 +5,15 @@
 `executeWorkspaceSymbolProvider`، دستورها با `commands.getCommands` و متن با همان
 موتور `ripgrep` که خود VS Code استفاده می‌کند.
 
-![preview](media/preview.png)
+دو حالت نمایش دارد (تنظیم `vsSearch.presentation`):
+
+**`overlay`** (پیش‌فرض) — باکس شناور روی ناحیه ادیتور، مثل PhpStorm:
+
+![overlay](media/preview.png)
+
+**`page`** — همان UI ولی تمام‌صفحه داخل یک تب ادیتور معمولی که باز می‌ماند:
+
+![page](media/preview-page.png)
 
 ## استفاده
 
@@ -19,12 +27,24 @@
 | `Tab` / `Shift+Tab` | عوض کردن تب (All / Files / Text / Symbols / Actions) |
 | `Esc` | بستن |
 
+## تفاوت `overlay` و `page`
+
+| | `overlay` | `page` |
+| --- | --- | --- |
+| ظاهر | باکس وسط صفحه + backdrop | تمام ناحیه تب |
+| تب ادیتور | موقت؛ با رفتن به تب دیگر خودکار بسته می‌شود | مثل ادیتور عادی باز می‌ماند |
+| مناسب برای | باز کردن سریع، مثل Search Everywhere فاب | سرچ طولانی و بالا/پایین رفتن در نتایج |
+
+توجه: ساخت پنلِ کاملاً بدون تب (شناور روی کل پنجره) با API افزونه‌های VS Code ممکن نیست.
+در حالت `overlay` یک تب موقت ساخته می‌شود ولی بلافاصله وقتی فوکوس برود حذف می‌شود.
+
 ## دستورها
 
 | Command ID | کار |
 | --- | --- |
-| `vsSearch.search` | اورلی (با توجه به `vsSearch.ui`) |
-| `vsSearch.overlay` | مستقیم حالت PhpStorm |
+| `vsSearch.search` | با توجه به `vsSearch.ui` و `vsSearch.presentation` |
+| `vsSearch.overlay` | همیشه حالت شناور |
+| `vsSearch.page` | همیشه حالت تمام‌صفحه |
 | `vsSearch.quickPick` | حالت QuickPick نیتیو |
 | `vsSearch.searchSelection` | اورلی با متن انتخاب‌شده |
 | `vsSearch.searchToSide` | فرستادن query به Search Editor کنار ادیتور |
@@ -41,7 +61,8 @@
 
 | Setting | Default | کار |
 | --- | --- | --- |
-| `vsSearch.ui` | `overlay` | `overlay` = باکس شناور PhpStorm، `quickpick` = QuickPick نیتیو |
+| `vsSearch.ui` | `overlay` | `overlay` = باکس PhpStorm، `quickpick` = QuickPick نیتیو |
+| `vsSearch.presentation` | `overlay` | `overlay` = شناور، `page` = تب تمام‌صفحه |
 | `vsSearch.theme` | `phpstorm` | `phpstorm` = پالت Darcula، `vscode` = رنگ‌های تم فعلی VS Code |
 | `vsSearch.maxResults` | `30` | سقف نتیجه برای هر منبع |
 | `vsSearch.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` (`searchEditor` یا `sidebarPanel`) |
@@ -55,8 +76,8 @@
 ```bash
 npm install
 npm run compile
-npm run package                       # vs-search-overlay-0.2.0.vsix
-code --install-extension vs-search-overlay-0.2.0.vsix
+npm run package                       # vs-search-overlay-0.3.0.vsix
+code --install-extension vs-search-overlay-0.3.0.vsix
 ```
 
 بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
@@ -65,7 +86,7 @@ code --install-extension vs-search-overlay-0.2.0.vsix
 
 ```
 src/extension.ts   ثبت commandها و انتخاب UI
-src/overlay.ts     WebviewPanel + پروتکل پیام با UI
+src/overlay.ts     WebviewPanel + پروتکل پیام با UI (دو حالت overlay/page)
 src/search.ts      providers: files / text (ripgrep) / symbols / commands
 src/native.ts      فرستادن query به Search Editor نیتیو
 src/quickpick.ts   حالت QuickPick
@@ -74,7 +95,7 @@ media/             HTML/CSS/JS داخل webview
 
 ## محدودیت‌ها
 
-- Webview در VS Code نمی‌تواند روی کل پنجره (سایدبار + پنل) شناور شود؛ اورلی روی ناحیه ادیتور
-  رندر می‌شود. برای همین وقتی تب عوض شود خودش بسته می‌شود تا حس modal بدهد.
+- Webview در VS Code نمی‌تواند روی کل پنجره (سایدبار + پنل) شناور شود؛ حالت `overlay` روی
+  ناحیه ادیتور رندر می‌شود و تبش موقتی است.
 - اگر `rg` روی سیستم نباشد، جست‌وجوی متن به اسکن فایل‌ها با API خود VS Code سقوط می‌کند (کندتر).
 - جست‌وجوی متن literal است (مثل حالت پیش‌فرض PhpStorm). برای regex از `Alt+Enter` و Search Editor استفاده کن.

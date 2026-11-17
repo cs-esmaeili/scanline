@@ -2,7 +2,7 @@
   "name": "vs-search-overlay",
   "displayName": "Search Overlay",
   "description": "PhpStorm-style centered search overlay for VS Code, powered by VS Code's own file, text, symbol and command search.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -21,7 +21,11 @@
       },
       {
         "command": "vsSearch.overlay",
-        "title": "Search: Open Overlay (PhpStorm style)"
+        "title": "Search: Open as Floating Overlay"
+      },
+      {
+        "command": "vsSearch.page",
+        "title": "Search: Open as Full Page"
       },
       {
         "command": "vsSearch.quickPick",
@@ -71,6 +75,19 @@
           ],
           "default": "overlay",
           "description": "Which UI `Search: Open Search Overlay` uses."
+        },
+        "vsSearch.presentation": {
+          "type": "string",
+          "enum": [
+            "overlay",
+            "page"
+          ],
+          "enumDescriptions": [
+            "Floating centered box over the editor area; closes as soon as you leave the tab",
+            "Full editor tab with the same search UI filling the tab; stays open like a normal editor"
+          ],
+          "default": "overlay",
+          "description": "How the search UI is presented: a modal-looking overlay or a full page tab."
         },
         "vsSearch.theme": {
           "type": "string",

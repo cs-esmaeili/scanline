@@ -7,12 +7,15 @@ import {
   type TabId,
 } from './search';
 
+export type Presentation = 'overlay' | 'page';
+
 interface OverlaySession {
   panel: vscode.WebviewPanel;
   context: vscode.ExtensionContext;
   groups: ResultGroups;
   query: string;
   generation: number;
+  mode: Presentation;
   timer?: ReturnType<typeof setTimeout>;
   disposed: boolean;
 }
@@ -24,14 +27,27 @@ const SEARCH_ICON =
   'stroke-width="1.3" stroke-linecap="round"><circle cx="7" cy="7" r="4.3"/>' +
   '<path d="M10.3 10.3L14 14"/></svg>';
 
+const CLOSE_ICON =
+  '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" ' +
+  'stroke-width="1.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+
 const EMPTY_GROUPS: ResultGroups = { files: [], text: [], symbols: [], actions: [] };
 
 export interface OverlayOptions {
   initial?: string;
   tab?: TabId;
+  mode?: Presentation;
 }
 
 export function showOverlay(context: vscode.ExtensionContext, options: OverlayOptions = {}): void {
+  const mode = options.mode ?? presentation();
+
+  // A different presentation needs a fresh panel; a "page" must not turn into
+  // a modal behind the user's back and vice versa.
+  if (session && !session.disposed && session.mode !== mode) {
+    dispose(session);
+  }
+
   if (session && !session.disposed) {
     session.panel.reveal(undefined, false);
     post(session, { type: 'focus' });
@@ -44,7 +60,7 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
   const mediaRoot = vscode.Uri.joinPath(context.extensionUri, 'media');
   const panel = vscode.window.createWebviewPanel(
     'vsSearch.overlay',
-    'Search',
+    mode === 'page' ? 'Search Everywhere' : 'Search',
     { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
     {
       enableScripts: true,
@@ -52,7 +68,7 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
       localResourceRoots: [mediaRoot],
     }
   );
-  panel.title = 'Search';
+  panel.title = mode === 'page' ? 'Search Everywhere' : 'Search';
 
   const current: OverlaySession = {
     panel,
@@ -60,11 +76,12 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
     groups: EMPTY_GROUPS,
     query: '',
     generation: 0,
+    mode,
     disposed: false,
   };
   session = current;
 
-  panel.webview.html = buildHtml(panel.webview, mediaRoot, theme());
+  panel.webview.html = buildHtml(panel.webview, mediaRoot, theme(), mode);
 
   panel.webview.onDidReceiveMessage(
     (message: { type?: string; value?: string; item?: ResultItem; alt?: boolean; tab?: TabId }) => {
@@ -95,15 +112,24 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
     }
   );
 
-  // Behaves like a modal: leaving the tab closes it.
+  // Modal only in overlay mode: leaving the tab closes it. In page mode the
+  // webview is a normal editor tab and stays put.
   let hasBeenVisible = false;
-  panel.onDidChangeViewState((event) => {
-    if (event.webviewPanel.visible) {
-      hasBeenVisible = true;
-    } else if (hasBeenVisible) {
-      dispose(current);
-    }
-  });
+  if (mode === 'overlay') {
+    panel.onDidChangeViewState((event) => {
+      if (event.webviewPanel.visible) {
+        hasBeenVisible = true;
+      } else if (hasBeenVisible) {
+        dispose(current);
+      }
+    });
+  } else {
+    panel.onDidChangeViewState((event) => {
+      if (event.webviewPanel.visible) {
+        post(current, { type: 'focus' });
+      }
+    });
+  }
 
   panel.onDidDispose(() => {
     current.disposed = true;
@@ -233,7 +259,16 @@ function theme(): string {
   return vscode.workspace.getConfiguration('vsSearch').get<string>('theme', 'phpstorm');
 }
 
-function buildHtml(webview: vscode.Webview, mediaRoot: vscode.Uri, palette: string): string {
+function presentation(): Presentation {
+  return vscode.workspace.getConfiguration('vsSearch').get<Presentation>('presentation', 'overlay');
+}
+
+function buildHtml(
+  webview: vscode.Webview,
+  mediaRoot: vscode.Uri,
+  palette: string,
+  mode: Presentation
+): string {
   const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.css'));
   const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.js'));
   const nonce = createNonce();
@@ -247,7 +282,7 @@ function buildHtml(webview: vscode.Webview, mediaRoot: vscode.Uri, palette: stri
 <link rel="stylesheet" href="${styleUri}" />
 <title>Search</title>
 </head>
-<body data-theme="${palette}">
+<body data-theme="${palette}" data-mode="${mode}">
   <div class="backdrop">
     <div class="dialog" role="dialog" aria-label="Search everywhere">
       <div class="input-row">
@@ -255,6 +290,7 @@ function buildHtml(webview: vscode.Webview, mediaRoot: vscode.Uri, palette: stri
         <input id="query" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search everywhere" />
         <span class="spinner" id="spinner"></span>
         <span class="esc">Esc</span>
+        <button class="page-only close-button" id="close" title="Close (Esc)" aria-label="Close">${CLOSE_ICON}</button>
       </div>
       <div class="tabs" id="tabs"></div>
       <div class="results" id="results"></div>

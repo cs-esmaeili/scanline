@@ -320,6 +320,83 @@ body[data-theme="vscode"] {
   color: var(--vs-muted);
 }
 
+/* ------------------------------------------------------------ page mode */
+
+body[data-mode="page"] {
+  background: var(--vs-bg);
+}
+
+body[data-mode="page"] .backdrop {
+  position: relative;
+  z-index: 1;
+  inset: auto;
+  height: 100%;
+  padding-top: 0;
+  background: var(--vs-bg);
+  align-items: stretch;
+}
+
+body[data-mode="page"] .dialog {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+body[data-mode="page"] .results {
+  max-height: none;
+}
+
+body[data-mode="page"] .input-row {
+  padding: 10px 16px;
+}
+
+body[data-mode="page"] #query {
+  font-size: 15px;
+}
+
+body[data-mode="page"] .row {
+  height: 26px;
+  padding: 0 16px;
+}
+
+body[data-mode="page"] .group-header {
+  padding-left: 16px;
+}
+
+body[data-mode="page"] .footer {
+  padding: 6px 16px;
+}
+
+body[data-mode="page"] .page-only {
+  display: inline-flex;
+}
+
+.page-only {
+  display: none;
+}
+
+.close-button {
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 3px;
+  color: var(--vs-muted);
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--vs-text-strong);
+}
+
 /* --------------------------------------------------------------- footer */
 
 .footer {

@@ -365,10 +365,21 @@
   });
 
   document.querySelector('.backdrop').addEventListener('mousedown', function (event) {
+    // In page mode the backdrop is the page itself, so clicking it does nothing.
+    if (document.body.dataset.mode === 'page') {
+      return;
+    }
     if (event.target === event.currentTarget) {
       vscode.postMessage({ type: 'close' });
     }
   });
+
+  const closeButton = document.getElementById('close');
+  if (closeButton) {
+    closeButton.addEventListener('click', function () {
+      vscode.postMessage({ type: 'close' });
+    });
+  }
 
   window.addEventListener('message', function (event) {
     const message = event.data;
