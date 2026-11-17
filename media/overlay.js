@@ -52,6 +52,13 @@
         esc(label) +
         '</option>';
     }
+    // A scope that is not in the list (e.g. a deep folder from the context
+    // menu) still needs to show up and stay selected.
+    if (current && !state.folders.some((folder) => folder.path === current)) {
+      const short = current.split(/[\\/]/).slice(-2).join('/');
+      html +=
+        '<option value="' + esc(current) + '" selected>' + esc(short) + '</option>';
+    }
     html += '<option value="__browse__">Browse\u2026</option>';
     scopeEl.innerHTML = html;
     scopeEl.value = current;
@@ -436,14 +443,18 @@
       if (message.theme) {
         document.body.dataset.theme = message.theme;
       }
+      const previousScope = state.scope;
       if (Array.isArray(message.folders)) {
-        renderScopeOptions(message.folders);
+        renderScopeOptions(message.folders, message.scope);
       }
+      const scopeChanged = message.scope !== undefined && message.scope !== previousScope;
       state.tab = message.tab || 'all';
       if (message.initial) {
         queryEl.value = message.initial;
         state.query = message.initial;
         vscode.postMessage({ type: 'query', value: message.initial, scope: state.scope, types: state.types });
+      } else if (scopeChanged) {
+        vscode.postMessage({ type: 'query', value: state.query, scope: state.scope, types: state.types });
       }
       queryEl.focus();
       if (queryEl.value) {

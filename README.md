@@ -10,6 +10,7 @@
 ## استفاده
 
 - **آیکون بالا-راست** یا `Ctrl+Alt+Shift+F` → تب سرچ **کنار ادیتور فعلی، نصف صفحه** باز می‌شود (مثل Claude Code)
+- **راست‌کلیک روی هر پوشه در Explorer → `Search in This Folder`** → همان تب با scope همان پوشه (مسیر از قبل انتخاب‌شده است)
 - تایپ کن → نتایج زنده در بخش‌های `Files` / `Text occurrences` / `Symbols` / `Commands`
 - `Enter` → فایل در ادیتور اصلی (ستون اول) باز می‌شود و **تب سرچ سر جایش می‌ماند**
 - `Alt+Enter` → همان query در Search Editor نیتیو VS Code (با همان فیلترها)
@@ -33,6 +34,7 @@
 | --- | --- |
 | `vsSearch.search` | باز کردن تب سرچ (آیکون بالا-راست هم همین است) |
 | `vsSearch.searchSelection` | با متن انتخاب‌شده |
+| `vsSearch.searchInFolder` | راست‌کلیک روی پوشه در Explorer → تب سرچ با scope همان پوشه |
 | `vsSearch.searchToSide` | Search Editor نیتیو کنار ادیتور |
 | `vsSearch.close` | بستن تب سرچ |
 

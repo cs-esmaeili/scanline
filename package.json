@@ -2,7 +2,7 @@
   "name": "vs-search-overlay",
   "displayName": "Search Overlay",
   "description": "Search Everywhere: open VS Code search in a tab with scope and file-type filters. Native search under the hood.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -34,6 +34,11 @@
       {
         "command": "vsSearch.close",
         "title": "Search: Close Search Page"
+      },
+      {
+        "command": "vsSearch.searchInFolder",
+        "title": "Search in This Folder",
+        "icon": "$(search)"
       }
     ],
     "keybindings": [
@@ -100,6 +105,13 @@
       "editor/title": [
         {
           "command": "vsSearch.search",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "vsSearch.searchInFolder",
+          "when": "explorerResourceIsFolder",
           "group": "navigation"
         }
       ]

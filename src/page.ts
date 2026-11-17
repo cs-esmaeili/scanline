@@ -37,13 +37,14 @@ const EMPTY_GROUPS: ResultGroups = { files: [], text: [], symbols: [], actions: 
 export interface PageOptions {
   initial?: string;
   tab?: TabId;
+  scope?: string;
 }
 
 export function showSearchPage(context: vscode.ExtensionContext, options: PageOptions = {}): void {
   if (session && !session.disposed) {
     session.panel.reveal(undefined, false);
     post(session, { type: 'focus' });
-    if (options.initial) {
+    if (options.initial || options.scope) {
       post(session, initMessage(options));
     }
     return;
@@ -68,7 +69,7 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
     panel,
     groups: EMPTY_GROUPS,
     query: '',
-    scope: '',
+    scope: options.scope ?? '',
     types: '',
     generation: 0,
     disposed: false,
@@ -337,6 +338,7 @@ function initMessage(options: PageOptions): Record<string, unknown> {
     mode: 'page',
     initial: options.initial ?? '',
     tab: options.tab ?? 'all',
+    scope: options.scope ?? '',
     folders: folders(),
   };
 }

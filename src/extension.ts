@@ -16,12 +16,26 @@ export function activate(context: vscode.ExtensionContext): void {
       showSearchPage(context, { initial: selectionText() })
     ),
     vscode.commands.registerCommand('vsSearch.searchToSide', () => searchToSide()),
-    vscode.commands.registerCommand('vsSearch.close', () => closeSearchPage())
+    vscode.commands.registerCommand('vsSearch.close', () => closeSearchPage()),
+    vscode.commands.registerCommand('vsSearch.searchInFolder', (uri?: vscode.Uri) => {
+      const folder = uri ?? vscode.window.activeTextEditor?.document.uri;
+      const fsPath = folder ? folder.fsPath : '';
+      const scope = fsPath ? (isDirectory(fsPath) ? fsPath : path.dirname(fsPath)) : '';
+      showSearchPage(context, { scope });
+    })
   );
 }
 
 export function deactivate(): void {
   closeSearchPage();
+}
+
+function isDirectory(fsPath: string): boolean {
+  try {
+    return fs.statSync(fsPath).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 async function searchToSide(): Promise<void> {
