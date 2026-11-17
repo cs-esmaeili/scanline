@@ -87,6 +87,75 @@ body[data-theme="vscode"] {
   }
 }
 
+/* --------------------------------------------------------------- controls */
+
+.controls {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--vs-bg);
+  border-bottom: 1px solid var(--vs-border-soft);
+  flex: 0 0 auto;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vs-input-bg);
+  border: 1px solid var(--vs-border-soft);
+  border-radius: 4px;
+  padding: 2px 8px;
+  height: 24px;
+}
+
+.scope-control {
+  flex: 0 0 auto;
+  max-width: 280px;
+}
+
+.types-control {
+  flex: 1 1 auto;
+  max-width: 420px;
+}
+
+.control .ctl-icon {
+  flex: 0 0 auto;
+  color: var(--vs-muted);
+}
+
+#scope {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--vs-text);
+  font-family: inherit;
+  font-size: 12px;
+  max-width: 240px;
+  cursor: pointer;
+  appearance: auto;
+}
+
+#scope option {
+  background: var(--vs-bg);
+  color: var(--vs-text);
+}
+
+#types {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--vs-text);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+#types::placeholder {
+  color: var(--vs-muted);
+}
+
 /* ------------------------------------------------------------ input row */
 
 .input-row {

@@ -17,6 +17,18 @@
         <span class="esc">Esc</span>
         <button class="page-only close-button" id="close" title="Close (Esc)" aria-label="Close"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
       </div>
+      <div class="controls">
+        <div class="control scope-control">
+          <svg class="ctl-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.8 3.6h4.4L7.6 6h6.6v7.2H1.8z"/></svg>
+          <select id="scope" title="Search scope">
+            <option value="">Everywhere</option>
+          </select>
+        </div>
+        <div class="control types-control">
+          <svg class="ctl-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><path d="M2 3.5h12M4.5 8h7M6.8 12.5h2.4"/></svg>
+          <input id="types" type="text" autocomplete="off" spellcheck="false" placeholder="File types: ts, js, md" />
+        </div>
+      </div>
       <div class="tabs" id="tabs"></div>
       <div class="results" id="results"></div>
       <div class="footer">

@@ -21,7 +21,11 @@ export interface OpenSearchEditorArgs {
  */
 export async function openNativeSearch(
   query: string,
-  options: { toSide?: boolean; config?: vscode.WorkspaceConfiguration } = {}
+  options: {
+    toSide?: boolean;
+    config?: vscode.WorkspaceConfiguration;
+    filesToInclude?: string;
+  } = {}
 ): Promise<void> {
   const config = options.config ?? vscode.workspace.getConfiguration('vsSearch');
   const target = config.get<string>('target', 'searchEditor');
@@ -39,6 +43,7 @@ export async function openNativeSearch(
       triggerSearch: true,
       focusResults: false,
       showIncludesExcludes: config.get<boolean>('showIncludesExcludes', false),
+      ...(options.filesToInclude ? { filesToInclude: options.filesToInclude } : {}),
     };
 
     try {

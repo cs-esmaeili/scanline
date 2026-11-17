@@ -40,19 +40,49 @@ export function cancelTextSearch(): void {
   }
 }
 
-export async function searchAll(query: string, limit: number): Promise<ResultGroups> {
+export async function searchAll(
+  query: string,
+  limit: number,
+  scope?: string,
+  types: string[] = []
+): Promise<ResultGroups> {
   const [files, text, symbols, actions] = await Promise.all([
-    searchFiles(query, limit).catch(() => []),
-    searchText(query, limit).catch(() => []),
-    searchSymbols(query, limit).catch(() => []),
+    searchFiles(query, limit, scope, types).catch(() => []),
+    searchText(query, limit, scope, types).catch(() => []),
+    searchSymbols(query, limit, scope, types).catch(() => []),
     searchActions(query, limit).catch(() => []),
   ]);
   return { files, text, symbols, actions };
 }
 
+/** "ts, js, *.md" -> ["ts", "js", "md"] */
+export function parseTypes(input: string): string[] {
+  return (input || '')
+    .split(/[\s,;]+/)
+    .map((part) => part.trim().toLowerCase().replace(/^\*?\./, ''))
+    .filter((part) => part.length > 0 && /^[a-z0-9_+-]+$/i.test(part));
+}
+
+function typeGlob(types: string[]): string {
+  return types.length === 1 ? `*.${types[0]}` : `*.{${types.join(',')}}`;
+}
+
+function matchesType(fsPath: string, types: string[]): boolean {
+  if (!types.length) {
+    return true;
+  }
+  const ext = path.extname(fsPath).slice(1).toLowerCase();
+  return types.includes(ext);
+}
+
 /* ------------------------------------------------------------------ files */
 
-export async function searchFiles(query: string, limit: number): Promise<ResultItem[]> {
+export async function searchFiles(
+  query: string,
+  limit: number,
+  scope?: string,
+  types: string[] = []
+): Promise<ResultItem[]> {
   if (!query.trim()) {
     return [];
   }
@@ -69,11 +99,11 @@ export async function searchFiles(query: string, limit: number): Promise<ResultI
       .filter(Boolean)
       .sort((a, b) => b.length - a.length)[0] ?? cleaned;
 
-  const pattern = `**/*${token}*`;
+  const pattern = types.length ? `**/${typeGlob(types)}` : `**/*${token}*`;
   const uris = await vscode.workspace.findFiles(
-    pattern,
+    scope ? new vscode.RelativePattern(vscode.Uri.file(scope), pattern) : pattern,
     '**/{node_modules,.git,dist,out,build,target}/**',
-    Math.max(limit * 4, 200)
+    Math.max(limit * 6, 300)
   );
 
   return uris
@@ -100,16 +130,23 @@ export async function searchFiles(query: string, limit: number): Promise<ResultI
 
 /* ------------------------------------------------------------------- text */
 
-export async function searchText(query: string, limit: number): Promise<ResultItem[]> {
+export async function searchText(
+  query: string,
+  limit: number,
+  scope?: string,
+  types: string[] = []
+): Promise<ResultItem[]> {
   if (query.trim().length < 2) {
     return [];
   }
 
   if (isRipgrepUnavailable()) {
-    return searchTextFallback(query, limit);
+    return searchTextFallback(query, limit, scope, types);
   }
 
-  const folders = vscode.workspace.workspaceFolders ?? [];
+  const folders = scope
+    ? [scope]
+    : (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath);
   if (!folders.length) {
     return [];
   }
@@ -119,7 +156,7 @@ export async function searchText(query: string, limit: number): Promise<ResultIt
     if (results.length >= limit) {
       break;
     }
-    const chunk = await ripgrep(folder.uri.fsPath, query, limit - results.length).catch(
+    const chunk = await ripgrep(folder, query, limit - results.length, types).catch(
       (error: NodeJS.ErrnoException) => {
         if (error?.code === 'ENOENT') {
           rgAvailable = false;
@@ -131,13 +168,13 @@ export async function searchText(query: string, limit: number): Promise<ResultIt
   }
 
   if (isRipgrepUnavailable()) {
-    return searchTextFallback(query, limit);
+    return searchTextFallback(query, limit, scope, types);
   }
 
   return results.slice(0, limit);
 }
 
-function ripgrep(cwd: string, query: string, limit: number): Promise<ResultItem[]> {
+function ripgrep(cwd: string, query: string, limit: number, types: string[]): Promise<ResultItem[]> {
   return new Promise<ResultItem[]>((resolve, reject) => {
     const args = [
       '--json',
@@ -155,6 +192,7 @@ function ripgrep(cwd: string, query: string, limit: number): Promise<ResultItem[
       '!**/node_modules/**',
       '--glob',
       '!**/.git/**',
+      ...types.flatMap((type) => ['--glob', `*.${type}`]),
       '--',
       query,
       '.',
@@ -255,9 +293,15 @@ function parseRgLine(line: string, cwd: string): ResultItem | undefined {
 }
 
 /** Used when `rg` is not on PATH. Same VS Code file API, no external binary. */
-async function searchTextFallback(query: string, limit: number): Promise<ResultItem[]> {
+async function searchTextFallback(
+  query: string,
+  limit: number,
+  scope?: string,
+  types: string[] = []
+): Promise<ResultItem[]> {
+  const pattern = types.length ? `**/${typeGlob(types)}` : '**/*';
   const files = await vscode.workspace.findFiles(
-    '**/*',
+    scope ? new vscode.RelativePattern(vscode.Uri.file(scope), pattern) : pattern,
     '**/{node_modules,.git,dist,out,build,target,coverage}/**',
     1500
   );
@@ -311,7 +355,12 @@ async function searchTextFallback(query: string, limit: number): Promise<ResultI
 
 /* ---------------------------------------------------------------- symbols */
 
-export async function searchSymbols(query: string, limit: number): Promise<ResultItem[]> {
+export async function searchSymbols(
+  query: string,
+  limit: number,
+  scope?: string,
+  types: string[] = []
+): Promise<ResultItem[]> {
   if (!query.trim()) {
     return [];
   }
@@ -322,8 +371,12 @@ export async function searchSymbols(query: string, limit: number): Promise<Resul
       query
     )) ?? [];
 
+  const scopePrefix = scope ? `${scope.replace(/[\\/]$/, '')}${path.sep}` : '';
+
   return symbols
     .filter((symbol) => symbol?.location?.uri)
+    .filter((symbol) => !scopePrefix || symbol.location.uri.fsPath.startsWith(scopePrefix))
+    .filter((symbol) => matchesType(symbol.location.uri.fsPath, types))
     .map((symbol) => ({
       symbol,
       score:

@@ -10,6 +10,25 @@ const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const fileCache = new Map();
 let runningRg;
 
+/** "ts, js, *.md" -> ["ts", "js", "md"] */
+function parseTypes(input) {
+  return String(input || '')
+    .split(/[\s,;]+/)
+    .map((part) => part.trim().toLowerCase().replace(/^\*?\./, ''))
+    .filter((part) => part.length > 0 && /^[a-z0-9_+-]+$/i.test(part));
+}
+
+function typeGlob(types) {
+  return types.length === 1 ? `*.${types[0]}` : `*.{${types.join(',')}}`;
+}
+
+function matchesType(filePath, types) {
+  if (!types.length) {
+    return true;
+  }
+  return types.includes(path.extname(filePath).slice(1).toLowerCase());
+}
+
 function configPath() {
   return path.join(os.homedir(), '.config', 'vs-search', 'workspace.json');
 }
@@ -102,8 +121,8 @@ function listFiles(root) {
   });
 }
 
-async function searchFiles(query, limit) {
-  const roots = workspaceRoots();
+async function searchFiles(query, limit, scope, types) {
+  const roots = scope ? [scope] : workspaceRoots();
   const needle = query.trim().replace(/\s+/g, '');
   if (!needle) {
     return [];
@@ -112,6 +131,9 @@ async function searchFiles(query, limit) {
   for (const root of roots) {
     const files = await listFiles(root);
     for (const relative of files) {
+      if (!matchesType(relative, types)) {
+        continue;
+      }
       const name = path.basename(relative);
       const score = fuzzyScore(name, needle);
       if (score > 0) {
@@ -131,12 +153,12 @@ async function searchFiles(query, limit) {
     }));
 }
 
-function searchText(query, limit) {
+function searchText(query, limit, scope, types) {
   const needle = query.trim();
   if (needle.length < 2) {
     return Promise.resolve([]);
   }
-  const roots = workspaceRoots();
+  const roots = scope ? [scope] : workspaceRoots();
   const results = [];
   return new Promise((resolve) => {
     let remaining = roots.length;
@@ -151,7 +173,7 @@ function searchText(query, limit) {
       }
     };
     for (const root of roots) {
-      ripgrep(root, needle, limit).then(
+      ripgrep(root, needle, limit, types).then(
         (chunk) => {
           results.push(...chunk);
           done();
@@ -162,7 +184,7 @@ function searchText(query, limit) {
   });
 }
 
-function ripgrep(cwd, query, limit) {
+function ripgrep(cwd, query, limit, types) {
   return new Promise((resolve, reject) => {
     const args = [
       '--json',
@@ -180,10 +202,11 @@ function ripgrep(cwd, query, limit) {
       '!**/node_modules/**',
       '--glob',
       '!**/.git/**',
-      '--',
-      query,
-      '.',
     ];
+    for (const type of types) {
+      args.push('--glob', `*.${type}`);
+    }
+    args.push('--', query, '.');
     const child = spawn('rg', args, { cwd, stdio: ['ignore', 'pipe', 'ignore'] });
     runningRg = child;
     const found = [];
@@ -262,8 +285,12 @@ function parseRgLine(line, cwd) {
   };
 }
 
-async function searchAll(query, limit) {
-  const [files, text] = await Promise.all([searchFiles(query, limit), searchText(query, limit)]);
+async function searchAll(query, limit, scope, types) {
+  const fileTypes = parseTypes(types);
+  const [files, text] = await Promise.all([
+    searchFiles(query, limit, scope, fileTypes),
+    searchText(query, limit, scope, fileTypes),
+  ]);
   return { files, text, symbols: [], actions: [] };
 }
 
@@ -273,6 +300,7 @@ module.exports = {
   searchAll,
   searchFiles,
   searchText,
+  parseTypes,
   cancel,
   fuzzyScore,
 };

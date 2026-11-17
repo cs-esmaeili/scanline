@@ -24,6 +24,9 @@
     tab: 'all',
     sel: 0,
     busy: false,
+    folders: [],
+    scope: '',
+    types: '',
   };
 
   const queryEl = document.getElementById('query');
@@ -31,6 +34,8 @@
   const resultsEl = document.getElementById('results');
   const statsEl = document.getElementById('stats');
   const spinnerEl = document.getElementById('spinner');
+  const scopeEl = document.getElementById('scope');
+  const typesEl = document.getElementById('types');
 
   function esc(value) {
     return String(value).replace(/[&<>"']/g, function (char) {
@@ -292,8 +297,22 @@
     state.query = queryEl.value;
     clearTimeout(queryTimer);
     queryTimer = setTimeout(function () {
-      vscode.postMessage({ type: 'query', value: state.query });
+      vscode.postMessage({ type: 'query', value: state.query, scope: state.scope, types: state.types });
     }, 110);
+  });
+
+  let typesTimer;
+  typesEl.addEventListener('input', function () {
+    state.types = typesEl.value;
+    clearTimeout(typesTimer);
+    typesTimer = setTimeout(function () {
+      vscode.postMessage({ type: 'query', value: state.query, scope: state.scope, types: state.types });
+    }, 300);
+  });
+
+  scopeEl.addEventListener('change', function () {
+    state.scope = scopeEl.value;
+    vscode.postMessage({ type: 'query', value: state.query, scope: state.scope, types: state.types });
   });
 
   document.addEventListener('keydown', function (event) {
@@ -391,11 +410,32 @@
       if (message.theme) {
         document.body.dataset.theme = message.theme;
       }
+      if (Array.isArray(message.folders)) {
+        state.folders = message.folders;
+        const selected = scopeEl.value || '';
+        scopeEl.innerHTML =
+          '<option value="">Everywhere</option>' +
+          message.folders
+            .map(function (folder) {
+              const label = folder.name || folder.path;
+              return (
+                '<option value="' +
+                esc(folder.path) +
+                '"' +
+                (folder.path === selected ? ' selected' : '') +
+                '>' +
+                esc(label) +
+                '</option>'
+              );
+            })
+            .join('');
+        state.scope = scopeEl.value;
+      }
       state.tab = message.tab || 'all';
       if (message.initial) {
         queryEl.value = message.initial;
         state.query = message.initial;
-        vscode.postMessage({ type: 'query', value: message.initial });
+        vscode.postMessage({ type: 'query', value: message.initial, scope: state.scope, types: state.types });
       }
       queryEl.focus();
       if (queryEl.value) {

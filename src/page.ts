@@ -3,66 +3,56 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {
   cancelTextSearch,
+  parseTypes,
   searchAll,
   type ResultGroups,
   type ResultItem,
   type TabId,
 } from './search';
+import { openNativeSearch } from './native';
 
-export type Presentation = 'overlay' | 'page';
+/**
+ * The search page: one editor tab, full-page UI, stays open like a normal
+ * editor. Opened from the top-right icon (editor/title) or the hotkey.
+ *
+ * The webview only renders; all searching happens in the extension host via
+ * VS Code's own file/symbol/command APIs and ripgrep.
+ */
 
-interface OverlaySession {
+interface SearchSession {
   panel: vscode.WebviewPanel;
-  context: vscode.ExtensionContext;
   groups: ResultGroups;
   query: string;
+  scope: string;
+  types: string;
   generation: number;
-  mode: Presentation;
   timer?: ReturnType<typeof setTimeout>;
   disposed: boolean;
 }
 
-let session: OverlaySession | undefined;
-
-const SEARCH_ICON =
-  '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" ' +
-  'stroke-width="1.3" stroke-linecap="round"><circle cx="7" cy="7" r="4.3"/>' +
-  '<path d="M10.3 10.3L14 14"/></svg>';
-
-const CLOSE_ICON =
-  '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" ' +
-  'stroke-width="1.4" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+let session: SearchSession | undefined;
 
 const EMPTY_GROUPS: ResultGroups = { files: [], text: [], symbols: [], actions: [] };
 
-export interface OverlayOptions {
+export interface PageOptions {
   initial?: string;
   tab?: TabId;
-  mode?: Presentation;
 }
 
-export function showOverlay(context: vscode.ExtensionContext, options: OverlayOptions = {}): void {
-  const mode = options.mode ?? presentation();
-
-  // A different presentation needs a fresh panel; a "page" must not turn into
-  // a modal behind the user's back and vice versa.
-  if (session && !session.disposed && session.mode !== mode) {
-    dispose(session);
-  }
-
+export function showSearchPage(context: vscode.ExtensionContext, options: PageOptions = {}): void {
   if (session && !session.disposed) {
     session.panel.reveal(undefined, false);
     post(session, { type: 'focus' });
     if (options.initial) {
-      post(session, { type: 'init', theme: theme(), initial: options.initial, tab: options.tab ?? 'all' });
+      post(session, initMessage(options));
     }
     return;
   }
 
   const mediaRoot = vscode.Uri.joinPath(context.extensionUri, 'media');
   const panel = vscode.window.createWebviewPanel(
-    'vsSearch.overlay',
-    mode === 'page' ? 'Search Everywhere' : 'Search',
+    'vsSearch.page',
+    'Search Everywhere',
     { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
     {
       enableScripts: true,
@@ -70,37 +60,41 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
       localResourceRoots: [mediaRoot],
     }
   );
-  panel.title = mode === 'page' ? 'Search Everywhere' : 'Search';
+  panel.title = 'Search Everywhere';
+  panel.iconPath = vscode.Uri.joinPath(mediaRoot, 'icon.svg');
 
-  const current: OverlaySession = {
+  const current: SearchSession = {
     panel,
-    context,
     groups: EMPTY_GROUPS,
     query: '',
+    scope: '',
+    types: '',
     generation: 0,
-    mode,
     disposed: false,
   };
   session = current;
 
-  panel.webview.html = buildHtml(panel.webview, mediaRoot, theme(), mode);
+  panel.webview.html = buildHtml(panel.webview, mediaRoot, theme());
 
   panel.webview.onDidReceiveMessage(
-    (message: { type?: string; value?: string; item?: ResultItem; alt?: boolean; tab?: TabId }) => {
+    (message: {
+      type?: string;
+      value?: string;
+      scope?: string;
+      types?: string;
+      item?: ResultItem;
+      alt?: boolean;
+      tab?: TabId;
+    }) => {
       if (!message?.type) {
         return;
       }
       switch (message.type) {
         case 'ready':
-          post(current, {
-            type: 'init',
-            theme: theme(),
-            initial: options.initial ?? '',
-            tab: options.tab ?? 'all',
-          });
+          post(current, initMessage(options));
           break;
         case 'query':
-          schedule(current, message.value ?? '');
+          schedule(current, message.value ?? '', message.scope ?? '', message.types ?? '');
           break;
         case 'accept':
           void accept(current, message.item, message.alt === true);
@@ -114,24 +108,12 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
     }
   );
 
-  // Modal only in overlay mode: leaving the tab closes it. In page mode the
-  // webview is a normal editor tab and stays put.
-  let hasBeenVisible = false;
-  if (mode === 'overlay') {
-    panel.onDidChangeViewState((event) => {
-      if (event.webviewPanel.visible) {
-        hasBeenVisible = true;
-      } else if (hasBeenVisible) {
-        dispose(current);
-      }
-    });
-  } else {
-    panel.onDidChangeViewState((event) => {
-      if (event.webviewPanel.visible) {
-        post(current, { type: 'focus' });
-      }
-    });
-  }
+  // Normal editor tab: coming back re-focuses the query input.
+  panel.onDidChangeViewState((event) => {
+    if (event.webviewPanel.visible) {
+      post(current, { type: 'focus' });
+    }
+  });
 
   panel.onDidDispose(() => {
     current.disposed = true;
@@ -145,14 +127,16 @@ export function showOverlay(context: vscode.ExtensionContext, options: OverlayOp
   });
 }
 
-export function closeOverlay(): void {
+export function closeSearchPage(): void {
   if (session) {
     dispose(session);
   }
 }
 
-function schedule(current: OverlaySession, query: string): void {
+function schedule(current: SearchSession, query: string, scope: string, types: string): void {
   current.query = query;
+  current.scope = scope;
+  current.types = types;
   cancelTextSearch();
   if (current.timer) {
     clearTimeout(current.timer);
@@ -162,7 +146,7 @@ function schedule(current: OverlaySession, query: string): void {
   }, 70);
 }
 
-async function run(current: OverlaySession): Promise<void> {
+async function run(current: SearchSession): Promise<void> {
   const query = current.query;
   const generation = ++current.generation;
 
@@ -172,10 +156,14 @@ async function run(current: OverlaySession): Promise<void> {
     return;
   }
 
-  const limit = vscode.workspace.getConfiguration('vsSearch').get<number>('maxResults', 30);
+  const config = vscode.workspace.getConfiguration('vsSearch');
+  const limit = config.get<number>('maxResults', 30);
+  const types = parseTypes(current.types);
+  const scope = validScope(current.scope);
+
   post(current, { type: 'busy', value: true });
 
-  const groups = await searchAll(query, limit);
+  const groups = await searchAll(query, limit, scope, types);
   if (current.disposed || generation !== current.generation) {
     return;
   }
@@ -185,7 +173,7 @@ async function run(current: OverlaySession): Promise<void> {
 }
 
 async function accept(
-  current: OverlaySession,
+  current: SearchSession,
   item: ResultItem | undefined,
   alt: boolean
 ): Promise<void> {
@@ -194,17 +182,13 @@ async function accept(
   }
 
   if (alt) {
-    const query = current.query.trim() || item.label;
-    dispose(current);
-    await vscode.commands.executeCommand('search.action.openEditor', {
-      query,
-      triggerSearch: true,
+    await openNativeSearch(current.query.trim() || item.label, {
+      filesToInclude: scopeGlob(current.scope, parseTypes(current.types)),
     });
     return;
   }
 
   if (item.kind === 'action' || item.kind === 'command') {
-    dispose(current);
     if (!item.command) {
       return;
     }
@@ -220,8 +204,7 @@ async function accept(
     return;
   }
 
-  dispose(current);
-
+  // The page stays open; the file opens in a preview tab next to it.
   const uri = vscode.Uri.parse(item.uri);
   if (item.kind === 'file') {
     await vscode.commands.executeCommand('vscode.open', uri);
@@ -239,7 +222,29 @@ async function accept(
   });
 }
 
-function dispose(current: OverlaySession): void {
+/** Scope must be a real folder inside the workspace, otherwise ignore it. */
+function validScope(scope: string): string | undefined {
+  if (!scope) {
+    return undefined;
+  }
+  try {
+    const stat = fs.statSync(scope);
+    return stat.isDirectory() ? scope : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function scopeGlob(scope: string, types: string[]): string {
+  const prefix = scope ? `${scope}/` : '';
+  if (!types.length) {
+    return `${prefix}**`;
+  }
+  const extGlob = types.length === 1 ? `*.${types[0]}` : `*.{${types.join(',')}}`;
+  return `${prefix}**/${extGlob}`;
+}
+
+function dispose(current: SearchSession): void {
   if (current.disposed) {
     return;
   }
@@ -250,7 +255,7 @@ function dispose(current: OverlaySession): void {
   }
 }
 
-function post(current: OverlaySession, message: unknown): void {
+function post(current: SearchSession, message: unknown): void {
   if (current.disposed) {
     return;
   }
@@ -261,16 +266,25 @@ function theme(): string {
   return vscode.workspace.getConfiguration('vsSearch').get<string>('theme', 'phpstorm');
 }
 
-function presentation(): Presentation {
-  return vscode.workspace.getConfiguration('vsSearch').get<Presentation>('presentation', 'overlay');
+function folders(): Array<{ name: string; path: string }> {
+  return (vscode.workspace.workspaceFolders ?? []).map((folder) => ({
+    name: folder.name,
+    path: folder.uri.fsPath,
+  }));
 }
 
-function buildHtml(
-  webview: vscode.Webview,
-  mediaRoot: vscode.Uri,
-  palette: string,
-  mode: Presentation | 'desktop'
-): string {
+function initMessage(options: PageOptions): Record<string, unknown> {
+  return {
+    type: 'init',
+    theme: theme(),
+    mode: 'page',
+    initial: options.initial ?? '',
+    tab: options.tab ?? 'all',
+    folders: folders(),
+  };
+}
+
+function buildHtml(webview: vscode.Webview, mediaRoot: vscode.Uri, palette: string): string {
   const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.css'));
   const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.js'));
   const nonce = createNonce();
@@ -282,23 +296,17 @@ function buildHtml(
     )
     .replace('{{styleHref}}', styleUri.toString())
     .replace('{{scriptTag}}', `<script nonce="${nonce}" src="${scriptUri}"></script>`)
-    .replace(/\{\{theme\}\}/g, String(palette))
-    .replace(/\{\{mode\}\}/g, String(mode));
+    .replace(/\{\{theme\}\}/g, palette)
+    .replace(/\{\{mode\}\}/g, 'page');
 }
 
 let templateCache: string | undefined;
 
-/** Shared between the VS Code webview and the standalone desktop overlay. */
 function template(): string {
   if (!templateCache) {
-    const folder = vscode.Uri.joinPath(extensionRoot(), 'media', 'overlay.html');
-    templateCache = fs.readFileSync(folder.fsPath, 'utf8');
+    templateCache = fs.readFileSync(path.join(__dirname, '..', 'media', 'overlay.html'), 'utf8');
   }
   return templateCache;
-}
-
-function extensionRoot(): vscode.Uri {
-  return vscode.Uri.file(path.join(__dirname, '..'));
 }
 
 function createNonce(): string {

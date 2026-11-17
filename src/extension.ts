@@ -2,46 +2,26 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { closeOverlay, showOverlay, type Presentation } from './overlay';
+import { closeSearchPage, showSearchPage } from './page';
 import { openNativeSearch } from './native';
-import { openQuickSearch } from './nativeQuickPick';
-
-type PresentationMode = 'quickpick' | 'overlay' | 'page';
 
 export function activate(context: vscode.ExtensionContext): void {
   syncDesktopWorkspace();
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => syncDesktopWorkspace()),
-    vscode.commands.registerCommand('vsSearch.search', () => dispatch(context)),
-    vscode.commands.registerCommand('vsSearch.quickPick', () =>
-      openQuickSearch(context, { initial: selectionText() })
+    vscode.commands.registerCommand('vsSearch.search', () =>
+      showSearchPage(context, { initial: selectionText() })
     ),
-    vscode.commands.registerCommand('vsSearch.overlay', () =>
-      showOverlay(context, { initial: selectionText(), mode: 'overlay' })
+    vscode.commands.registerCommand('vsSearch.searchSelection', () =>
+      showSearchPage(context, { initial: selectionText() })
     ),
-    vscode.commands.registerCommand('vsSearch.page', () =>
-      showOverlay(context, { initial: selectionText(), mode: 'page' })
-    ),
-    vscode.commands.registerCommand('vsSearch.searchSelection', () => dispatch(context)),
     vscode.commands.registerCommand('vsSearch.searchToSide', () => searchToSide()),
-    vscode.commands.registerCommand('vsSearch.close', () => closeOverlay())
+    vscode.commands.registerCommand('vsSearch.close', () => closeSearchPage())
   );
 }
 
 export function deactivate(): void {
-  closeOverlay();
-}
-
-function dispatch(context: vscode.ExtensionContext): void {
-  const initial = selectionText();
-  const mode = presentationMode();
-
-  if (mode === 'quickpick') {
-    openQuickSearch(context, { initial });
-    return;
-  }
-
-  showOverlay(context, { initial, mode });
+  closeSearchPage();
 }
 
 async function searchToSide(): Promise<void> {
@@ -58,10 +38,6 @@ async function searchToSide(): Promise<void> {
   }
 
   await openNativeSearch(query.trim(), { toSide: true });
-}
-
-function config(): vscode.WorkspaceConfiguration {
-  return vscode.workspace.getConfiguration('vsSearch');
 }
 
 /**
@@ -83,10 +59,6 @@ function syncDesktopWorkspace(): void {
   } catch {
     // best effort: the desktop overlay falls back to $HOME
   }
-}
-
-function presentationMode(): PresentationMode {
-  return config().get<PresentationMode>('presentation', 'quickpick');
 }
 
 function selectionText(): string {

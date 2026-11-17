@@ -1,8 +1,8 @@
 {
   "name": "vs-search-overlay",
   "displayName": "Search Overlay",
-  "description": "PhpStorm-style centered search overlay for VS Code, powered by VS Code's own file, text, symbol and command search.",
-  "version": "0.5.0",
+  "description": "Search Everywhere: open VS Code search in a tab with scope and file-type filters. Native search under the hood.",
+  "version": "0.6.0",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -17,23 +17,15 @@
     "commands": [
       {
         "command": "vsSearch.search",
-        "title": "Search: Open Search Overlay"
-      },
-      {
-        "command": "vsSearch.overlay",
-        "title": "Search: Open as Webview Overlay (PhpStorm style)"
-      },
-      {
-        "command": "vsSearch.page",
-        "title": "Search: Open as Full Page"
-      },
-      {
-        "command": "vsSearch.quickPick",
-        "title": "Search: Open Native QuickPick (no tab)"
+        "title": "Search Everywhere",
+        "icon": {
+          "light": "media/icon.svg",
+          "dark": "media/icon.svg"
+        }
       },
       {
         "command": "vsSearch.searchSelection",
-        "title": "Search: Open Overlay with Selection"
+        "title": "Search: Search with Selection"
       },
       {
         "command": "vsSearch.searchToSide",
@@ -41,7 +33,7 @@
       },
       {
         "command": "vsSearch.close",
-        "title": "Search: Close Overlay"
+        "title": "Search: Close Search Page"
       }
     ],
     "keybindings": [
@@ -59,21 +51,6 @@
     "configuration": {
       "title": "Search Overlay",
       "properties": {
-        "vsSearch.presentation": {
-          "type": "string",
-          "enum": [
-            "quickpick",
-            "overlay",
-            "page"
-          ],
-          "enumDescriptions": [
-            "Native floating QuickPick - no editor tab, opens wherever you are (default)",
-            "Webview box styled like PhpStorm; uses a temporary editor tab behind the scenes",
-            "Webview that fills a regular editor tab and stays open"
-          ],
-          "default": "quickpick",
-          "description": "How the search UI is presented."
-        },
         "vsSearch.theme": {
           "type": "string",
           "enum": [
@@ -93,11 +70,6 @@
           "minimum": 5,
           "maximum": 200,
           "description": "Maximum number of results per provider (files, text, symbols, actions)."
-        },
-        "vsSearch.title": {
-          "type": "string",
-          "default": "Search Everywhere",
-          "description": "Title used by the QuickPick mode and the native fallback."
         },
         "vsSearch.target": {
           "type": "string",
@@ -123,6 +95,14 @@
           "description": "Show the 'files to include / exclude' inputs in the Search Editor."
         }
       }
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "vsSearch.search",
+          "group": "navigation"
+        }
+      ]
     }
   },
   "scripts": {

@@ -8,7 +8,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { EMPTY_GROUPS, searchAll, cancel } = require('./search');
+const { EMPTY_GROUPS, searchAll, workspaceRoots, cancel } = require('./search');
 
 const MEDIA = path.join(__dirname, '..', 'media');
 const WIDTH = 820;
@@ -20,6 +20,8 @@ let win;
 let generation = 0;
 let timer;
 let lastQuery = '';
+let lastScope = '';
+let lastTypes = '';
 
 function fileUrl(target) {
   return 'file://' + target.split(path.sep).join('/');
@@ -144,8 +146,10 @@ function send(message) {
   }
 }
 
-function schedule(query) {
+function schedule(query, scope, types) {
   lastQuery = query;
+  lastScope = scope || '';
+  lastTypes = types || '';
   cancel();
   if (timer) {
     clearTimeout(timer);
@@ -163,7 +167,7 @@ async function run() {
   }
 
   send({ type: 'busy', value: true });
-  const groups = await searchAll(query, 15);
+  const groups = await searchAll(query, 15, lastScope || undefined, lastTypes);
   if (current !== generation) {
     return;
   }
@@ -190,10 +194,20 @@ ipcMain.on('overlay:message', (event, message) => {
   }
   switch (message.type) {
     case 'ready':
-      send({ type: 'init', theme: 'phpstorm', mode: 'desktop', initial: '', tab: 'all' });
+      send({
+        type: 'init',
+        theme: 'phpstorm',
+        mode: 'desktop',
+        initial: '',
+        tab: 'all',
+        folders: workspaceRoots().map((root) => ({
+          name: path.basename(root) || root,
+          path: root,
+        })),
+      });
       break;
     case 'query':
-      schedule(String(message.value || ''));
+      schedule(String(message.value || ''), String(message.scope || ''), String(message.types || ''));
       break;
     case 'accept':
       if (openResult(message.item)) {

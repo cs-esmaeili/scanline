@@ -1,121 +1,99 @@
-# Search Overlay
+# Search Everywhere
 
-سه چیز در این ریپو هست:
+سرچ VS Code در یک تب معمولی، با فیلتر مسیر و نوع فایل. موتور سرچ نیتیو می‌ماند
+(`findFiles`، workspace symbols، command registry و همان `ripgrep` که VS Code استفاده می‌کند).
 
-| بخش | چیست |
+![page](media/preview.png)
+
+یک آیکون هم بالا-راست پنجره (کنار تب‌ها، مثل Claude Code) اضافه می‌شود که تب سرچ را باز می‌کند.
+
+## استفاده
+
+- **آیکون بالا-راست** یا `Ctrl+Alt+Shift+F` → تب سرچ باز می‌شود
+- تایپ کن → نتایج زنده در بخش‌های `Files` / `Text occurrences` / `Symbols` / `Commands`
+- `Enter` → فایل روی همان خط باز می‌شود (تب سرچ باز می‌ماند)
+- `Alt+Enter` → همان query در Search Editor نیتیو VS Code (با همان فیلترها)
+- `Esc` → بستن تب
+
+| کلید | کار |
 | --- | --- |
-| `desktop/` | **اورلی واقعی دسکتاپ** — پنجره‌ی بی‌قاب، همیشه روی همه چیز، دقیقاً وسط صفحه، با hotkey سراسری. نتیجه را با `code -g` در VS Code باز می‌کند. |
-| `src/` + `media/` | افزونه VS Code با سه حالت (QuickPick / اورلی وب‌ویو / تب تمام‌صفحه) |
-| `media/` | UI مشترک هر دو (یک HTML/CSS/JS برای webview و اپ دسکتاپ) |
+| `↑` `↓` / `PageUp` `PageDown` | حرکت در نتایج |
+| `Tab` / `Shift+Tab` | عوض کردن تب نتایج |
 
-![desktop overlay](media/preview-desktop.png)
+## دو فیلتر جدید
 
-## ۱) اورلی دسکتاپ
+1. **مسیر (Scope)** — بالای سرچ، دکمهٔ کنار آیکون پوشه: `Everywhere` یا هر پوشه از workspace. سرچ فقط در همان مسیر انجام می‌شود (هم Files، هم Text، هم Symbols).
+2. **نوع فایل** — باکس `File types`: مثلاً `ts, js, md` یا `*.py`. هم لیست فایل‌ها و هم متن فقط در همان پسوندها جست‌وجو می‌شود.
 
-پنجره‌ای ۸۲۰×۴۸۰، بدون قاب، `alwaysOnTop`، وسط مانیتوری که موس رویش است.
-با `Esc` یا کلیک بیرون بسته می‌شود؛ دکمه‌ی hotkey دوباره بازش می‌کند.
+هر دو فیلتر به `Alt+Enter` هم می‌رسند (Search Editor با include همان scope/types باز می‌شود).
 
-```bash
-cd desktop
-npm install
-./run.sh          # تست دستی
-```
-
-بعد یک shortcut سراسری بساز:
-
-- **KDE**: System Settings → Shortcuts → Custom → *Add New → Command or Script*
-  - Command: `/home/javad/dev/vs-search/desktop/run.sh`
-  - Trigger: مثلاً `Meta+Shift+F`
-- **GNOME**: Settings → Keyboard → Custom Shortcuts → `+`
-
-هر بار زدن hotkey: اگر پنجره باز است → بسته می‌شود، اگر بسته است → باز می‌شود
-(single-instance lock + toggle).
-
-### کدام فولدر سرچ شود؟
-
-افزونه VS Code هنگام فعال شدن، ریشه‌ی workspaceها را در
-`~/.config/vs-search/workspace.json` می‌نویسد و اپ دسکتاپ همان را می‌خواند.
-بدون آن، `$VS_SEARCH_ROOT` یا `$HOME` استفاده می‌شود.
-
-### چه چیزی سرچ می‌شود؟
-
-- **Files** — `rg --files` + fuzzy rank روی نام فایل
-- **Text** — `rg --json`، literal + smart-case، همان موتوری که VS Code استفاده می‌کند
-- Symbols و Commands در اپ دسکتاپ نیستند (به language server و registry خود VS Code نیاز دارند)
-
-`Enter` روی نتیجه → `code -g path:line:col` → فایل در پنجره‌ی باز VS Code باز می‌شود.
-
-### نکته‌ی Wayland
-
-Wayland اجازه‌ی تعیین موقعیت پنجره نمی‌دهد؛ برای همین `run.sh` با
-`--ozone-platform=x11` (XWayland) اجرا می‌شود تا «وسط صفحه» و «همیشه روی همه» واقعاً کار کند.
-
-## ۲) افزونه VS Code
-
-![overlay](media/preview.png)
-
-| حالت (`vsSearch.presentation`) | تب ادیتور | ظاهر |
-| --- | --- | --- |
-| `quickpick` (پیش‌فرض) | **هیچ** | QuickPick نیتیو، بالای پنجره |
-| `overlay` | تب موقت | باکس شناور PhpStorm روی ناحیه ادیتور |
-| `page` | تب دائمی | همان UI تمام‌صفحه در تب |
-
-> هر `WebviewPanel` در VS Code الزاماً یک تب است؛ امکان پنل شناور روی کل پنجره
-> وجود ندارد. برای «روی همه چیز، وسط صفحه» از اپ `desktop/` استفاده کن.
-
-### دستورها
+## دستورها
 
 | Command ID | کار |
 | --- | --- |
-| `vsSearch.search` | با توجه به `vsSearch.presentation` |
-| `vsSearch.quickPick` | حالت بدون تب |
-| `vsSearch.overlay` | باکس شناور |
-| `vsSearch.page` | تب تمام‌صفحه |
+| `vsSearch.search` | باز کردن تب سرچ (آیکون بالا-راست هم همین است) |
 | `vsSearch.searchSelection` | با متن انتخاب‌شده |
-| `vsSearch.searchToSide` | Search Editor نیتیو |
-| `vsSearch.close` | بستن |
+| `vsSearch.searchToSide` | Search Editor نیتیو کنار ادیتور |
+| `vsSearch.close` | بستن تب سرچ |
 
-کلید پیش‌فرض: `Ctrl+Alt+Shift+F` (قابل تغییر در `Ctrl+K Ctrl+S` یا `keybindings.json`).
+عوض کردن کلید: `Ctrl+K Ctrl+S` → `vsSearch.search`. یا در `keybindings.json`:
 
-### تنظیمات
+```json
+{ "key": "ctrl+shift+alt+f", "command": "vsSearch.search" }
+```
+
+## تنظیمات
 
 | Setting | Default | کار |
 | --- | --- | --- |
-| `vsSearch.presentation` | `quickpick` | `quickpick` / `overlay` / `page` |
-| `vsSearch.theme` | `phpstorm` | پالت حالت‌های webview |
+| `vsSearch.theme` | `phpstorm` | `phpstorm` = پالت Darcula · `vscode` = رنگ‌های تم فعلی |
 | `vsSearch.maxResults` | `30` | سقف نتیجه هر منبع |
-| `vsSearch.title` | `Search Everywhere` | تیتر |
-| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` |
+| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` |
 | `vsSearch.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
-| `vsSearch.showIncludesExcludes` | `false` | فیلد include/exclude در Search Editor |
+| `vsSearch.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
 
-### نصب افزونه
+## اپ دسکتاپ (اختیاری)
+
+همان UI به شکل پنجره‌ی مستقل وسط صفحه، روی همه چیز:
+
+```bash
+cd desktop && npm install && ./run.sh
+```
+
+![desktop](media/preview-desktop.png)
+
+- با یک shortcut سراسری صدا زده می‌شود (KDE: System Settings → Shortcuts → Custom → Command = `…/desktop/run.sh`)
+- اگر باز است → می‌بندد، اگر بسته است → باز می‌کند (single-instance toggle)
+- فولدرهای workspace را از `~/.config/vs-search/workspace.json` می‌خواند (افزونه خودش آن را می‌نویسد)
+- `Enter` → `code -g path:line:col` در همان پنجرهٔ VS Code
+- با `--ozone-platform=x11` اجرا می‌شود چون Wayland موقعیت پنجره نمی‌دهد
+
+## نصب و بیلد افزونه
 
 ```bash
 npm install
 npm run compile
-npm run package                       # vs-search-overlay-0.5.0.vsix
-code --install-extension vs-search-overlay-0.5.0.vsix
+npm run package                       # vs-search-overlay-0.6.0.vsix
+code --install-extension vs-search-overlay-0.6.0.vsix
 ```
+
+بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
 
 ## ساختار
 
 ```
-desktop/main.js     پنجره‌ی دسکتاپ، IPC، hotkey toggle، `code -g`
-desktop/search.js   providers برای اپ دسکتاپ (rg)
-desktop/preload.js  پل بین UI و Electron
-media/overlay.html  قالب مشترک UI (webview + desktop)
-media/overlay.js    منطق UI (تایپ، تب، کیبورد، رندر نتایج)
+media/overlay.html  قالب مشترک UI (تب VS Code + اپ دسکتاپ)
+media/overlay.js    منطق UI: تایپ، تب‌ها، scope، file types، رندر
 media/overlay.css   ظاهر PhpStorm/Darcula
-src/extension.ts    commandها + سینک ریشه‌ی workspace برای اپ دسکتاپ
-src/nativeQuickPick.ts  حالت بدون تب داخل VS Code
-src/overlay.ts      webview برای overlay / page
-src/search.ts       providers داخل VS Code
-src/native.ts       فرستادن query به Search Editor
+src/page.ts         تب سرچ (webview) + پروتکل پیام
+src/search.ts       providers: files / text (ripgrep) / symbols / commands
+src/native.ts       فرستادن query به Search Editor نیتیو
+src/extension.ts    commandها، آیکون editor/title، سینک workspace برای اپ دسکتاپ
+desktop/            اپ دسکتاپ (Electron)
 ```
 
 ## محدودیت‌ها
 
-- جست‌وجوی متن literal است (مثل پیش‌فرض PhpStorm). regex → `searchToSide`.
-- اگر `rg` نباشد، افزونه به اسکن با `workspace.fs` سقوط می‌کند؛ اپ دسکتاپ به `rg` نیاز دارد.
+- جست‌وجوی متن literal است (مثل پیش‌فرض PhpStorm). regex → `searchToSide` یا `Alt+Enter`.
+- اگر `rg` نباشد، متن با `workspace.fs` اسکن می‌شود (کندتر).
 - اپ دسکتاپ symbol/command ندارد.
