@@ -1,0 +1,99 @@
+{
+  "name": "vs-search-overlay",
+  "displayName": "Search Overlay",
+  "description": "Open VS Code's native full-text search as a centered overlay instead of the left sidebar (PhpStorm style).",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vsSearch.search",
+        "title": "Search: Open Overlay (centered)"
+      },
+      {
+        "command": "vsSearch.searchToSide",
+        "title": "Search: Open Overlay to the Side"
+      },
+      {
+        "command": "vsSearch.searchSelection",
+        "title": "Search: Open Overlay with Selection"
+      },
+      {
+        "command": "vsSearch.clearHistory",
+        "title": "Search: Clear Overlay History"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vsSearch.search",
+        "key": "ctrl+alt+shift+f",
+        "mac": "cmd+alt+shift+f"
+      },
+      {
+        "command": "vsSearch.searchSelection",
+        "key": "ctrl+alt+shift+s",
+        "mac": "cmd+alt+shift+s"
+      }
+    ],
+    "configuration": {
+      "title": "Search Overlay",
+      "properties": {
+        "vsSearch.title": {
+          "type": "string",
+          "default": "Search Everywhere",
+          "description": "Title shown on the overlay input."
+        },
+        "vsSearch.target": {
+          "type": "string",
+          "enum": [
+            "searchEditor",
+            "sidebarPanel"
+          ],
+          "enumDescriptions": [
+            "Centered overlay that opens VS Code's native Search Editor in the editor area",
+            "Fall back to the left sidebar search view"
+          ],
+          "default": "searchEditor",
+          "description": "Where the actual results are shown after submitting the overlay."
+        },
+        "vsSearch.reuseSearchEditor": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reuse an existing Search Editor tab instead of opening a new one each time."
+        },
+        "vsSearch.showIncludesExcludes": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the 'files to include / exclude' inputs in the Search Editor."
+        },
+        "vsSearch.historyLimit": {
+          "type": "number",
+          "default": 25,
+          "minimum": 0,
+          "description": "How many recent queries to keep in the overlay."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^2.32.0",
+    "typescript": "^5.5.4"
+  }
+}
