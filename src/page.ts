@@ -53,7 +53,8 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
   const panel = vscode.window.createWebviewPanel(
     'vsSearch.page',
     'Search Everywhere',
-    { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
+    // Like Claude Code: a half-screen tab beside the current editor.
+    { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false },
     {
       enableScripts: true,
       retainContextWhenHidden: true,
@@ -95,6 +96,9 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
           break;
         case 'query':
           schedule(current, message.value ?? '', message.scope ?? '', message.types ?? '');
+          break;
+        case 'browseScope':
+          void pickFolder(current);
           break;
         case 'accept':
           void accept(current, message.item, message.alt === true);
@@ -204,10 +208,14 @@ async function accept(
     return;
   }
 
-  // The page stays open; the file opens in a preview tab next to it.
+  // The page stays open; the file opens in the primary editor beside it.
   const uri = vscode.Uri.parse(item.uri);
   if (item.kind === 'file') {
-    await vscode.commands.executeCommand('vscode.open', uri);
+    const document = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(document, {
+      viewColumn: vscode.ViewColumn.One,
+      preview: true,
+    });
     return;
   }
 
@@ -217,6 +225,7 @@ async function accept(
     Math.max(0, (item.column ?? 1) - 1)
   );
   await vscode.window.showTextDocument(document, {
+    viewColumn: vscode.ViewColumn.One,
     preview: true,
     selection: new vscode.Range(position, position),
   });
@@ -267,10 +276,58 @@ function theme(): string {
 }
 
 function folders(): Array<{ name: string; path: string }> {
-  return (vscode.workspace.workspaceFolders ?? []).map((folder) => ({
-    name: folder.name,
-    path: folder.uri.fsPath,
-  }));
+  const list: Array<{ name: string; path: string }> = [];
+  for (const root of vscode.workspace.workspaceFolders ?? []) {
+    list.push({ name: root.name, path: root.uri.fsPath });
+    list.push(...subfolders(root.uri.fsPath, root.name));
+  }
+  return list;
+}
+
+const SKIPPED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'out',
+  'build',
+  'target',
+  'coverage',
+  '.next',
+  '.nuxt',
+]);
+
+/** Direct subfolders of a root, labelled relative to the workspace. */
+function subfolders(dir: string, label: string): Array<{ name: string; path: string }> {
+  const result: Array<{ name: string; path: string }> = [];
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (result.length >= 40) {
+        break;
+      }
+      if (!entry.isDirectory() || entry.name.startsWith('.') || SKIPPED_DIRS.has(entry.name)) {
+        continue;
+      }
+      result.push({
+        name: `${label}/${entry.name}`,
+        path: path.join(dir, entry.name),
+      });
+    }
+  } catch {
+    // unreadable root
+  }
+  return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function pickFolder(current: SearchSession): Promise<void> {
+  const picked = await vscode.window.showOpenDialog({
+    canSelectFolders: true,
+    canSelectMany: false,
+    openLabel: 'Set search scope',
+    defaultUri: current.scope ? vscode.Uri.file(current.scope) : undefined,
+  });
+
+  const scope = picked?.[0]?.fsPath ?? current.scope;
+  post(current, { type: 'folders', folders: folders(), scope });
 }
 
 function initMessage(options: PageOptions): Record<string, unknown> {

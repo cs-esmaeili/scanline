@@ -3,7 +3,7 @@
 //
 // It reuses the exact same UI as the VS Code webview (media/overlay.html,
 // overlay.css, overlay.js) and opens results in VS Code via `code -g`.
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, dialog } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -140,6 +140,43 @@ function hide() {
   win.hide();
 }
 
+const SKIPPED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'out',
+  'build',
+  'target',
+  'coverage',
+  '.next',
+  '.nuxt',
+]);
+
+/** Workspace roots plus their direct subfolders, for the scope dropdown. */
+function scopeFolders() {
+  const list = [];
+  for (const root of workspaceRoots()) {
+    list.push({ name: path.basename(root) || root, path: root });
+    try {
+      for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+        if (list.length >= 60) {
+          break;
+        }
+        if (!entry.isDirectory() || entry.name.startsWith('.') || SKIPPED_DIRS.has(entry.name)) {
+          continue;
+        }
+        list.push({
+          name: `${path.basename(root)}/${entry.name}`,
+          path: path.join(root, entry.name),
+        });
+      }
+    } catch {
+      // unreadable root
+    }
+  }
+  return list;
+}
+
 function send(message) {
   if (win && !win.isDestroyed()) {
     win.webContents.send('overlay:message', message);
@@ -200,15 +237,26 @@ ipcMain.on('overlay:message', (event, message) => {
         mode: 'desktop',
         initial: '',
         tab: 'all',
-        folders: workspaceRoots().map((root) => ({
-          name: path.basename(root) || root,
-          path: root,
-        })),
+        folders: scopeFolders(),
       });
       break;
     case 'query':
       schedule(String(message.value || ''), String(message.scope || ''), String(message.types || ''));
       break;
+    case 'browseScope': {
+      const options = { properties: ['openDirectory'], title: 'Set search scope' };
+      if (lastScope) {
+        options.defaultPath = lastScope;
+      }
+      dialog
+        .showOpenDialog(win, options)
+        .then((result) => {
+          const scope = (!result.canceled && result.filePaths[0]) || lastScope || '';
+          send({ type: 'folders', folders: scopeFolders(), scope });
+        })
+        .catch(() => send({ type: 'folders', folders: scopeFolders(), scope: lastScope || '' }));
+      break;
+    }
     case 'accept':
       if (openResult(message.item)) {
         hide();

@@ -37,6 +37,27 @@
   const scopeEl = document.getElementById('scope');
   const typesEl = document.getElementById('types');
 
+  function renderScopeOptions(folders, selected) {
+    state.folders = folders || [];
+    const current = selected || scopeEl.value || '';
+    let html = '<option value="">Everywhere</option>';
+    for (const folder of state.folders) {
+      const label = folder.name || folder.path;
+      html +=
+        '<option value="' +
+        esc(folder.path) +
+        '"' +
+        (folder.path === current ? ' selected' : '') +
+        '>' +
+        esc(label) +
+        '</option>';
+    }
+    html += '<option value="__browse__">Browse\u2026</option>';
+    scopeEl.innerHTML = html;
+    scopeEl.value = current;
+    state.scope = current;
+  }
+
   function esc(value) {
     return String(value).replace(/[&<>"']/g, function (char) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char];
@@ -311,6 +332,11 @@
   });
 
   scopeEl.addEventListener('change', function () {
+    if (scopeEl.value === '__browse__') {
+      scopeEl.value = state.scope || '';
+      vscode.postMessage({ type: 'browseScope' });
+      return;
+    }
     state.scope = scopeEl.value;
     vscode.postMessage({ type: 'query', value: state.query, scope: state.scope, types: state.types });
   });
@@ -411,25 +437,7 @@
         document.body.dataset.theme = message.theme;
       }
       if (Array.isArray(message.folders)) {
-        state.folders = message.folders;
-        const selected = scopeEl.value || '';
-        scopeEl.innerHTML =
-          '<option value="">Everywhere</option>' +
-          message.folders
-            .map(function (folder) {
-              const label = folder.name || folder.path;
-              return (
-                '<option value="' +
-                esc(folder.path) +
-                '"' +
-                (folder.path === selected ? ' selected' : '') +
-                '>' +
-                esc(label) +
-                '</option>'
-              );
-            })
-            .join('');
-        state.scope = scopeEl.value;
+        renderScopeOptions(message.folders);
       }
       state.tab = message.tab || 'all';
       if (message.initial) {
@@ -464,6 +472,17 @@
       state.sel = 0;
       clampSelection();
       render();
+      return;
+    }
+
+    if (message.type === 'folders') {
+      renderScopeOptions(message.folders, message.scope);
+      vscode.postMessage({
+        type: 'query',
+        value: state.query,
+        scope: state.scope,
+        types: state.types,
+      });
       return;
     }
 

@@ -279,7 +279,9 @@ function parseRgLine(line: string, cwd: string): ResultItem | undefined {
     }
   }
 
-  const uri = vscode.Uri.file(parsed.data.path.text);
+  const relative = parsed.data.path.text.replace(/^\.\//, '');
+  // rg prints paths relative to its cwd; make them absolute before wrapping.
+  const uri = vscode.Uri.file(path.isAbsolute(relative) ? relative : path.join(cwd, relative));
   return {
     kind: 'text',
     label: text.length > 240 ? text.slice(0, 240) : text,
