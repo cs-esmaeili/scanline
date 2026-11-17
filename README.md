@@ -1,24 +1,37 @@
 # Search Overlay
 
-سرچ VS Code را به‌جای سایدبار چپ، به شکل یک اورلی وسط صفحه باز می‌کند (حس PhpStorm).
+سرچ VS Code را به شکل یک باکس شناور وسط صفحه باز می‌کند، با ظاهر PhpStorm/Darcula.
+هیچ الگوریتم سرچی از صفر نوشته نشده: فایل‌ها با `workspace.findFiles`، سیمبل‌ها با
+`executeWorkspaceSymbolProvider`، دستورها با `commands.getCommands` و متن با همان
+موتور `ripgrep` که خود VS Code استفاده می‌کند.
 
-**هیچ منطق سرچی نوشته نشده.** موتور سرچ، ریجکس، match-case، whole-word و نتیجه‌ها همه نیتیو خود VS Code هستند. این افزونه فقط UI را جابه‌جا می‌کند:
+![preview](media/preview.png)
 
-1. یک `QuickPick` نیتیو (که خود VS Code وسط-بالای پنجره رندر می‌کند) query را می‌گیرد.
-2. با Enter، query را به **Search Editor** نیتیو VS Code می‌دهد (`search.action.openEditor`) که داخل ناحیه ادیتور باز می‌شود، نه سایدبار.
+## استفاده
+
+`Ctrl+Alt+Shift+F` → باکس باز می‌شود → تایپ کن → `Enter` فایل را روی همان خط باز می‌کند.
+
+| کلید | کار |
+| --- | --- |
+| `↑` `↓` / `PageUp` `PageDown` | حرکت در نتایج |
+| `Enter` | باز کردن نتیجه (فایل/سیمبل → ادیتور روی خط، Action → اجرا) |
+| `Alt+Enter` | همان query را در Search Editor نیتیو VS Code باز کن |
+| `Tab` / `Shift+Tab` | عوض کردن تب (All / Files / Text / Symbols / Actions) |
+| `Esc` | بستن |
 
 ## دستورها
 
-| Command ID | Title | کلید پیش‌فرض |
-| --- | --- | --- |
-| `vsSearch.search` | Search: Open Overlay (centered) | `Ctrl+Alt+Shift+F` / `Cmd+Alt+Shift+F` |
-| `vsSearch.searchSelection` | Search: Open Overlay with Selection | `Ctrl+Alt+Shift+S` / `Cmd+Alt+Shift+S` |
-| `vsSearch.searchToSide` | Search: Open Overlay to the Side | — |
-| `vsSearch.clearHistory` | Search: Clear Overlay History | — |
+| Command ID | کار |
+| --- | --- |
+| `vsSearch.search` | اورلی (با توجه به `vsSearch.ui`) |
+| `vsSearch.overlay` | مستقیم حالت PhpStorm |
+| `vsSearch.quickPick` | حالت QuickPick نیتیو |
+| `vsSearch.searchSelection` | اورلی با متن انتخاب‌شده |
+| `vsSearch.searchToSide` | فرستادن query به Search Editor کنار ادیتور |
+| `vsSearch.close` | بستن اورلی |
+| `vsSearch.clearHistory` | پاک کردن تاریخچه |
 
-کلید را عوض کردن: `Ctrl+K Ctrl+S` → جست‌وجوی `vsSearch.search` → دوبار کلیک → هر ترکیبی که خودت گفتی.
-
-یا مستقیم در `keybindings.json`:
+عوض کردن کلید: `Ctrl+K Ctrl+S` → `vsSearch.search` → هر ترکیبی که خواستی. یا در `keybindings.json`:
 
 ```json
 { "key": "ctrl+shift+alt+f", "command": "vsSearch.search" }
@@ -28,25 +41,40 @@
 
 | Setting | Default | کار |
 | --- | --- | --- |
-| `vsSearch.title` | `Search Everywhere` | تیتر باکس ورودی |
-| `vsSearch.target` | `searchEditor` | `searchEditor` = اورلی وسط + Search Editor، `sidebarPanel` = برگشت به سرچ سایدبار |
-| `vsSearch.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor موجود به‌جای باز کردن تب جدید |
-| `vsSearch.showIncludesExcludes` | `false` | نمایش فیلدهای include/exclude در Search Editor |
-| `vsSearch.historyLimit` | `25` | تعداد queryهای اخیر که در اورلی لیست می‌شوند |
+| `vsSearch.ui` | `overlay` | `overlay` = باکس شناور PhpStorm، `quickpick` = QuickPick نیتیو |
+| `vsSearch.theme` | `phpstorm` | `phpstorm` = پالت Darcula، `vscode` = رنگ‌های تم فعلی VS Code |
+| `vsSearch.maxResults` | `30` | سقف نتیجه برای هر منبع |
+| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` (`searchEditor` یا `sidebarPanel`) |
+| `vsSearch.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
+| `vsSearch.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
+| `vsSearch.title` | `Search Everywhere` | تیتر حالت QuickPick |
+| `vsSearch.historyLimit` | `25` | تعداد queryهای اخیر در حالت QuickPick |
 
-## نصب
+## نصب و بیلد
 
 ```bash
 npm install
 npm run compile
-npm run package          # می‌سازد: vs-search-overlay-0.0.1.vsix
-code --install-extension vs-search-overlay-0.0.1.vsix
+npm run package                       # vs-search-overlay-0.2.0.vsix
+code --install-extension vs-search-overlay-0.2.0.vsix
 ```
 
-بعد از نصب، پنجره‌های VS Code را reload کن.
+بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
 
-برای توسعه/دیباگ: پوشه را در VS Code باز کن و `F5` بزن (launch config آماده است).
+## ساختار
 
-## محدودیت واقعیِ API
+```
+src/extension.ts   ثبت commandها و انتخاب UI
+src/overlay.ts     WebviewPanel + پروتکل پیام با UI
+src/search.ts      providers: files / text (ripgrep) / symbols / commands
+src/native.ts      فرستادن query به Search Editor نیتیو
+src/quickpick.ts   حالت QuickPick
+media/             HTML/CSS/JS داخل webview
+```
 
-API افزونه‌های VS Code اجازه نمی‌دهد پنل نیتیو را "شناور" وسط صفحه جابه‌جا کنی. نزدیک‌ترین حالتِ بدون بازنویسی سرچ همین ترکیب است: ورودی نیتیو وسط + نتیجه‌های نیتیو داخل ادیتور. اگر باکس شناورِ کاملاً شبیه PhpStorm می‌خواهی، باید `WebviewPanel` بسازیم و سرچ را خودمان بزنیم — که دقیقاً همان چیزی است که گفتی نمی‌خواهی.
+## محدودیت‌ها
+
+- Webview در VS Code نمی‌تواند روی کل پنجره (سایدبار + پنل) شناور شود؛ اورلی روی ناحیه ادیتور
+  رندر می‌شود. برای همین وقتی تب عوض شود خودش بسته می‌شود تا حس modal بدهد.
+- اگر `rg` روی سیستم نباشد، جست‌وجوی متن به اسکن فایل‌ها با API خود VS Code سقوط می‌کند (کندتر).
+- جست‌وجوی متن literal است (مثل حالت پیش‌فرض PhpStorm). برای regex از `Alt+Enter` و Search Editor استفاده کن.

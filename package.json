@@ -1,8 +1,8 @@
 {
   "name": "vs-search-overlay",
   "displayName": "Search Overlay",
-  "description": "Open VS Code's native full-text search as a centered overlay instead of the left sidebar (PhpStorm style).",
-  "version": "0.0.1",
+  "description": "PhpStorm-style centered search overlay for VS Code, powered by VS Code's own file, text, symbol and command search.",
+  "version": "0.2.0",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -17,15 +17,27 @@
     "commands": [
       {
         "command": "vsSearch.search",
-        "title": "Search: Open Overlay (centered)"
+        "title": "Search: Open Search Overlay"
       },
       {
-        "command": "vsSearch.searchToSide",
-        "title": "Search: Open Overlay to the Side"
+        "command": "vsSearch.overlay",
+        "title": "Search: Open Overlay (PhpStorm style)"
+      },
+      {
+        "command": "vsSearch.quickPick",
+        "title": "Search: Open Native QuickPick"
       },
       {
         "command": "vsSearch.searchSelection",
         "title": "Search: Open Overlay with Selection"
+      },
+      {
+        "command": "vsSearch.searchToSide",
+        "title": "Search: Open Search to the Side"
+      },
+      {
+        "command": "vsSearch.close",
+        "title": "Search: Close Overlay"
       },
       {
         "command": "vsSearch.clearHistory",
@@ -47,10 +59,43 @@
     "configuration": {
       "title": "Search Overlay",
       "properties": {
+        "vsSearch.ui": {
+          "type": "string",
+          "enum": [
+            "overlay",
+            "quickpick"
+          ],
+          "enumDescriptions": [
+            "PhpStorm-style floating overlay (webview) inside the editor area",
+            "Native VS Code QuickPick at the top of the window"
+          ],
+          "default": "overlay",
+          "description": "Which UI `Search: Open Search Overlay` uses."
+        },
+        "vsSearch.theme": {
+          "type": "string",
+          "enum": [
+            "phpstorm",
+            "vscode"
+          ],
+          "enumDescriptions": [
+            "Fixed Darcula-like palette, closest to PhpStorm",
+            "Follow the current VS Code theme colors"
+          ],
+          "default": "phpstorm",
+          "description": "Color palette of the overlay."
+        },
+        "vsSearch.maxResults": {
+          "type": "number",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 200,
+          "description": "Maximum number of results per provider (files, text, symbols, actions)."
+        },
         "vsSearch.title": {
           "type": "string",
           "default": "Search Everywhere",
-          "description": "Title shown on the overlay input."
+          "description": "Title used by the QuickPick mode and the native fallback."
         },
         "vsSearch.target": {
           "type": "string",
@@ -59,16 +104,16 @@
             "sidebarPanel"
           ],
           "enumDescriptions": [
-            "Centered overlay that opens VS Code's native Search Editor in the editor area",
-            "Fall back to the left sidebar search view"
+            "Open VS Code's native Search Editor in the editor area",
+            "Use the left sidebar search view"
           ],
           "default": "searchEditor",
-          "description": "Where the actual results are shown after submitting the overlay."
+          "description": "Where `Search: Open Search to the Side` and Alt+Enter send the query."
         },
         "vsSearch.reuseSearchEditor": {
           "type": "boolean",
           "default": true,
-          "description": "Reuse an existing Search Editor tab instead of opening a new one each time."
+          "description": "Reuse an existing Search Editor tab instead of opening a new one."
         },
         "vsSearch.showIncludesExcludes": {
           "type": "boolean",
@@ -79,7 +124,7 @@
           "type": "number",
           "default": 25,
           "minimum": 0,
-          "description": "How many recent queries to keep in the overlay."
+          "description": "How many recent queries the QuickPick mode remembers."
         }
       }
     }
@@ -88,7 +133,7 @@
     "compile": "tsc -p .",
     "watch": "tsc -w -p .",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package --no-dependencies"
+    "package": "vsce package --no-dependencies --allow-missing-repository --baseImagesUrl https://example.invalid/vs-search"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
