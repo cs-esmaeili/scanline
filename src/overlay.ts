@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   cancelTextSearch,
   searchAll,
@@ -267,42 +269,36 @@ function buildHtml(
   webview: vscode.Webview,
   mediaRoot: vscode.Uri,
   palette: string,
-  mode: Presentation
+  mode: Presentation | 'desktop'
 ): string {
   const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.css'));
   const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'overlay.js'));
   const nonce = createNonce();
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}';" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="stylesheet" href="${styleUri}" />
-<title>Search</title>
-</head>
-<body data-theme="${palette}" data-mode="${mode}">
-  <div class="backdrop">
-    <div class="dialog" role="dialog" aria-label="Search everywhere">
-      <div class="input-row">
-        <span class="search-icon">${SEARCH_ICON}</span>
-        <input id="query" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Search everywhere" />
-        <span class="spinner" id="spinner"></span>
-        <span class="esc">Esc</span>
-        <button class="page-only close-button" id="close" title="Close (Esc)" aria-label="Close">${CLOSE_ICON}</button>
-      </div>
-      <div class="tabs" id="tabs"></div>
-      <div class="results" id="results"></div>
-      <div class="footer">
-        <div class="hints">&#8593;&#8595; navigate &middot; Enter open &middot; Alt+Enter in Search Editor &middot; Tab switch tab &middot; Esc close</div>
-        <div class="stats" id="stats"></div>
-      </div>
-    </div>
-  </div>
-  <script nonce="${nonce}" src="${scriptUri}"></script>
-</body>
-</html>`;
+  return template()
+    .replace(
+      '{{cspMeta}}',
+      `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} data:; script-src 'nonce-${nonce}';" />`
+    )
+    .replace('{{styleHref}}', styleUri.toString())
+    .replace('{{scriptTag}}', `<script nonce="${nonce}" src="${scriptUri}"></script>`)
+    .replace(/\{\{theme\}\}/g, String(palette))
+    .replace(/\{\{mode\}\}/g, String(mode));
+}
+
+let templateCache: string | undefined;
+
+/** Shared between the VS Code webview and the standalone desktop overlay. */
+function template(): string {
+  if (!templateCache) {
+    const folder = vscode.Uri.joinPath(extensionRoot(), 'media', 'overlay.html');
+    templateCache = fs.readFileSync(folder.fsPath, 'utf8');
+  }
+  return templateCache;
+}
+
+function extensionRoot(): vscode.Uri {
+  return vscode.Uri.file(path.join(__dirname, '..'));
 }
 
 function createNonce(): string {

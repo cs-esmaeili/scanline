@@ -1,116 +1,121 @@
 # Search Overlay
 
-سرچ VS Code را به شکل یک اورلی وسط صفحه باز می‌کند. سه حالت نمایش دارد و پیش‌فرض
-`quickpick` است: **بدون تب**، هرجا که هستی روی صفحه باز می‌شود.
+سه چیز در این ریپو هست:
 
-| حالت (`vsSearch.presentation`) | تب ادیتور | ظاهر |
-| --- | --- | --- |
-| `quickpick` (پیش‌فرض) | **هیچ** | QuickPick نیتیو، وسط صفحه، با نتایج زنده |
-| `overlay` | تب موقت (خودکار بسته می‌شود) | باکس شناور PhpStorm روی ناحیه ادیتور |
-| `page` | تب دائمی | همان UI تمام‌صفحه داخل تب |
+| بخش | چیست |
+| --- | --- |
+| `desktop/` | **اورلی واقعی دسکتاپ** — پنجره‌ی بی‌قاب، همیشه روی همه چیز، دقیقاً وسط صفحه، با hotkey سراسری. نتیجه را با `code -g` در VS Code باز می‌کند. |
+| `src/` + `media/` | افزونه VS Code با سه حالت (QuickPick / اورلی وب‌ویو / تب تمام‌صفحه) |
+| `media/` | UI مشترک هر دو (یک HTML/CSS/JS برای webview و اپ دسکتاپ) |
 
-> محدودیت پلتفرم: هر `WebviewPanel` در VS Code الزاماً یک تب ادیتور است؛ امکان
-> ساختن پنل شناور روی کل پنجره وجود ندارد. برای همین حالت پیش‌فرض QuickPick است:
-> کامپوننت نیتیو که واقعاً روی پنجره باز می‌شود و هیچ تبی نمی‌سازد.
+![desktop overlay](media/preview-desktop.png)
 
-## حالت‌ها
+## ۱) اورلی دسکتاپ
 
-**`quickpick` — بدون تب، همه‌جا**
+پنجره‌ای ۸۲۰×۴۸۰، بدون قاب، `alwaysOnTop`، وسط مانیتوری که موس رویش است.
+با `Esc` یا کلیک بیرون بسته می‌شود؛ دکمه‌ی hotkey دوباره بازش می‌کند.
 
-- تایپ کن → نتایج زنده در بخش‌های `Files` / `Text occurrences` / `Symbols` / `Commands`
-- `Enter` روی نتیجه → فایل روی همان خط باز می‌شود
-- `Enter` بدون نتیجه → Search Editor نیتیو VS Code با همان query باز می‌شود
-- `Esc` → بستن
+```bash
+cd desktop
+npm install
+./run.sh          # تست دستی
+```
 
-**`overlay` — باکس شناور PhpStorm** (تب موقت، با رفتن فوکوس خودکار حذف می‌شود)
+بعد یک shortcut سراسری بساز:
+
+- **KDE**: System Settings → Shortcuts → Custom → *Add New → Command or Script*
+  - Command: `/home/javad/dev/vs-search/desktop/run.sh`
+  - Trigger: مثلاً `Meta+Shift+F`
+- **GNOME**: Settings → Keyboard → Custom Shortcuts → `+`
+
+هر بار زدن hotkey: اگر پنجره باز است → بسته می‌شود، اگر بسته است → باز می‌شود
+(single-instance lock + toggle).
+
+### کدام فولدر سرچ شود؟
+
+افزونه VS Code هنگام فعال شدن، ریشه‌ی workspaceها را در
+`~/.config/vs-search/workspace.json` می‌نویسد و اپ دسکتاپ همان را می‌خواند.
+بدون آن، `$VS_SEARCH_ROOT` یا `$HOME` استفاده می‌شود.
+
+### چه چیزی سرچ می‌شود؟
+
+- **Files** — `rg --files` + fuzzy rank روی نام فایل
+- **Text** — `rg --json`، literal + smart-case، همان موتوری که VS Code استفاده می‌کند
+- Symbols و Commands در اپ دسکتاپ نیستند (به language server و registry خود VS Code نیاز دارند)
+
+`Enter` روی نتیجه → `code -g path:line:col` → فایل در پنجره‌ی باز VS Code باز می‌شود.
+
+### نکته‌ی Wayland
+
+Wayland اجازه‌ی تعیین موقعیت پنجره نمی‌دهد؛ برای همین `run.sh` با
+`--ozone-platform=x11` (XWayland) اجرا می‌شود تا «وسط صفحه» و «همیشه روی همه» واقعاً کار کند.
+
+## ۲) افزونه VS Code
 
 ![overlay](media/preview.png)
 
-**`page` — همان UI در یک تب معمولی** (باز می‌ماند، برای مرور طولانی نتایج)
+| حالت (`vsSearch.presentation`) | تب ادیتور | ظاهر |
+| --- | --- | --- |
+| `quickpick` (پیش‌فرض) | **هیچ** | QuickPick نیتیو، بالای پنجره |
+| `overlay` | تب موقت | باکس شناور PhpStorm روی ناحیه ادیتور |
+| `page` | تب دائمی | همان UI تمام‌صفحه در تب |
 
-![page](media/preview-page.png)
+> هر `WebviewPanel` در VS Code الزاماً یک تب است؛ امکان پنل شناور روی کل پنجره
+> وجود ندارد. برای «روی همه چیز، وسط صفحه» از اپ `desktop/` استفاده کن.
 
-## استفاده
-
-`Ctrl+Alt+Shift+F` → سرچ باز می‌شود → تایپ کن → `Enter`.
-
-در حالت‌های webview:
-
-| کلید | کار |
-| --- | --- |
-| `↑` `↓` / `PageUp` `PageDown` | حرکت در نتایج |
-| `Enter` | باز کردن نتیجه (Action → اجرا) |
-| `Alt+Enter` | همان query در Search Editor نیتیو |
-| `Tab` / `Shift+Tab` | عوض کردن تب |
-| `Esc` | بستن |
-
-## دستورها
+### دستورها
 
 | Command ID | کار |
 | --- | --- |
 | `vsSearch.search` | با توجه به `vsSearch.presentation` |
-| `vsSearch.quickPick` | همیشه حالت بدون تب |
-| `vsSearch.overlay` | همیشه باکس شناور |
-| `vsSearch.page` | همیشه تب تمام‌صفحه |
-| `vsSearch.searchSelection` | همان `vsSearch.search` با متن انتخاب‌شده |
-| `vsSearch.searchToSide` | فرستادن query به Search Editor کنار ادیتور |
-| `vsSearch.close` | بستن باکس webview |
+| `vsSearch.quickPick` | حالت بدون تب |
+| `vsSearch.overlay` | باکس شناور |
+| `vsSearch.page` | تب تمام‌صفحه |
+| `vsSearch.searchSelection` | با متن انتخاب‌شده |
+| `vsSearch.searchToSide` | Search Editor نیتیو |
+| `vsSearch.close` | بستن |
 
-عوض کردن کلید: `Ctrl+K Ctrl+S` → `vsSearch.search` → هر ترکیبی که خواستی. یا در `keybindings.json`:
+کلید پیش‌فرض: `Ctrl+Alt+Shift+F` (قابل تغییر در `Ctrl+K Ctrl+S` یا `keybindings.json`).
 
-```json
-{ "key": "ctrl+shift+alt+f", "command": "vsSearch.search" }
-```
-
-## منبع نتایج
-
-هیچ الگوریتم سرچی از صفر نوشته نشده:
-
-| بخش | منبع |
-| --- | --- |
-| Files | `workspace.findFiles` + fuzzy rank |
-| Text | همان `rg` (ripgrep) که VS Code استفاده می‌کند، literal + smart-case |
-| Symbols | `executeWorkspaceSymbolProvider` (خود language servers) |
-| Commands | `commands.getCommands` |
-
-اگر `rg` روی سیستم نباشد، جست‌وجوی متن به اسکن فایل با `workspace.fs` سقوط می‌کند (کندتر).
-
-## تنظیمات
+### تنظیمات
 
 | Setting | Default | کار |
 | --- | --- | --- |
-| `vsSearch.presentation` | `quickpick` | `quickpick` = بدون تب · `overlay` = باکس شناور · `page` = تب تمام‌صفحه |
-| `vsSearch.theme` | `phpstorm` | پالت حالت‌های webview: `phpstorm` (Darcula) یا `vscode` |
-| `vsSearch.maxResults` | `30` | سقف نتیجه هر منبع (در حالت quickpick حداکثر ۱۵) |
-| `vsSearch.title` | `Search Everywhere` | تیتر اورلی |
-| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` (`searchEditor` یا `sidebarPanel`) |
+| `vsSearch.presentation` | `quickpick` | `quickpick` / `overlay` / `page` |
+| `vsSearch.theme` | `phpstorm` | پالت حالت‌های webview |
+| `vsSearch.maxResults` | `30` | سقف نتیجه هر منبع |
+| `vsSearch.title` | `Search Everywhere` | تیتر |
+| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` |
 | `vsSearch.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
-| `vsSearch.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
+| `vsSearch.showIncludesExcludes` | `false` | فیلد include/exclude در Search Editor |
 
-## نصب و بیلد
+### نصب افزونه
 
 ```bash
 npm install
 npm run compile
-npm run package                       # vs-search-overlay-0.4.0.vsix
-code --install-extension vs-search-overlay-0.4.0.vsix
+npm run package                       # vs-search-overlay-0.5.0.vsix
+code --install-extension vs-search-overlay-0.5.0.vsix
 ```
-
-بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
 
 ## ساختار
 
 ```
-src/extension.ts        ثبت commandها و انتخاب حالت
-src/nativeQuickPick.ts  حالت بدون تب (QuickPick + نتایج زنده)
-src/overlay.ts          WebviewPanel برای overlay / page
-src/search.ts           providers: files / text (ripgrep) / symbols / commands
-src/native.ts           فرستادن query به Search Editor نیتیو
-media/                  HTML/CSS/JS داخل webview
+desktop/main.js     پنجره‌ی دسکتاپ، IPC، hotkey toggle، `code -g`
+desktop/search.js   providers برای اپ دسکتاپ (rg)
+desktop/preload.js  پل بین UI و Electron
+media/overlay.html  قالب مشترک UI (webview + desktop)
+media/overlay.js    منطق UI (تایپ، تب، کیبورد، رندر نتایج)
+media/overlay.css   ظاهر PhpStorm/Darcula
+src/extension.ts    commandها + سینک ریشه‌ی workspace برای اپ دسکتاپ
+src/nativeQuickPick.ts  حالت بدون تب داخل VS Code
+src/overlay.ts      webview برای overlay / page
+src/search.ts       providers داخل VS Code
+src/native.ts       فرستادن query به Search Editor
 ```
 
 ## محدودیت‌ها
 
-- حالت‌های webview نمی‌توانند روی کل پنجره (سایدبار + پنل) شناور شوند؛ محدودیت API است.
-- جست‌وجوی متن literal است (مثل پیش‌فرض PhpStorm). برای regex از `searchToSide` یا `Alt+Enter` و Search Editor استفاده کن.
-- در حالت `quickpick` فیلتر داخلی QuickPick خاموش است (`alwaysShow`) تا نتایج multi-word حذف نشوند.
+- جست‌وجوی متن literal است (مثل پیش‌فرض PhpStorm). regex → `searchToSide`.
+- اگر `rg` نباشد، افزونه به اسکن با `workspace.fs` سقوط می‌کند؛ اپ دسکتاپ به `rg` نیاز دارد.
+- اپ دسکتاپ symbol/command ندارد.
