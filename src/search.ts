@@ -362,24 +362,13 @@ export async function searchActions(query: string, limit: number): Promise<Resul
     ? candidates.filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score)
     : [];
 
-  const items: ResultItem[] = matches.slice(0, limit).map((entry) => ({
-    kind: 'action',
+  return matches.slice(0, limit).map((entry) => ({
+    kind: 'action' as const,
     label: entry.title,
     detail: entry.id,
     command: entry.id,
     score: entry.score,
   }));
-
-  // Always give a way into the real command palette.
-  items.push({
-    kind: 'command',
-    label: 'Show All Commands',
-    detail: 'VS Code command palette',
-    command: 'workbench.action.quickOpen',
-    score: -1,
-  });
-
-  return items;
 }
 
 function prettifyCommand(id: string): string {

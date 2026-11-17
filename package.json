@@ -2,7 +2,7 @@
   "name": "vs-search-overlay",
   "displayName": "Search Overlay",
   "description": "PhpStorm-style centered search overlay for VS Code, powered by VS Code's own file, text, symbol and command search.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -21,7 +21,7 @@
       },
       {
         "command": "vsSearch.overlay",
-        "title": "Search: Open as Floating Overlay"
+        "title": "Search: Open as Webview Overlay (PhpStorm style)"
       },
       {
         "command": "vsSearch.page",
@@ -29,7 +29,7 @@
       },
       {
         "command": "vsSearch.quickPick",
-        "title": "Search: Open Native QuickPick"
+        "title": "Search: Open Native QuickPick (no tab)"
       },
       {
         "command": "vsSearch.searchSelection",
@@ -37,15 +37,11 @@
       },
       {
         "command": "vsSearch.searchToSide",
-        "title": "Search: Open Search to the Side"
+        "title": "Search: Search in Files (Search Editor)"
       },
       {
         "command": "vsSearch.close",
         "title": "Search: Close Overlay"
-      },
-      {
-        "command": "vsSearch.clearHistory",
-        "title": "Search: Clear Overlay History"
       }
     ],
     "keybindings": [
@@ -63,31 +59,20 @@
     "configuration": {
       "title": "Search Overlay",
       "properties": {
-        "vsSearch.ui": {
-          "type": "string",
-          "enum": [
-            "overlay",
-            "quickpick"
-          ],
-          "enumDescriptions": [
-            "PhpStorm-style floating overlay (webview) inside the editor area",
-            "Native VS Code QuickPick at the top of the window"
-          ],
-          "default": "overlay",
-          "description": "Which UI `Search: Open Search Overlay` uses."
-        },
         "vsSearch.presentation": {
           "type": "string",
           "enum": [
+            "quickpick",
             "overlay",
             "page"
           ],
           "enumDescriptions": [
-            "Floating centered box over the editor area; closes as soon as you leave the tab",
-            "Full editor tab with the same search UI filling the tab; stays open like a normal editor"
+            "Native floating QuickPick - no editor tab, opens wherever you are (default)",
+            "Webview box styled like PhpStorm; uses a temporary editor tab behind the scenes",
+            "Webview that fills a regular editor tab and stays open"
           ],
-          "default": "overlay",
-          "description": "How the search UI is presented: a modal-looking overlay or a full page tab."
+          "default": "quickpick",
+          "description": "How the search UI is presented."
         },
         "vsSearch.theme": {
           "type": "string",
@@ -136,12 +121,6 @@
           "type": "boolean",
           "default": false,
           "description": "Show the 'files to include / exclude' inputs in the Search Editor."
-        },
-        "vsSearch.historyLimit": {
-          "type": "number",
-          "default": 25,
-          "minimum": 0,
-          "description": "How many recent queries the QuickPick mode remembers."
         }
       }
     }
