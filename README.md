@@ -1,127 +1,131 @@
 # Scanline
 
-**Scanline** — search files, text, symbols and commands from one editor tab, with folder-scope and file-type filters. The native engine stays in charge (`findFiles`, workspace symbols, the command registry, and the same `ripgrep` VS Code uses).
+Search files, text, symbols and commands from a single editor tab — with folder-scope and file-type filters. The native engine stays in charge: `findFiles`, workspace symbols, the command registry, and the same `ripgrep` VS Code already uses.
 
-- One shortcut opens a half-screen search tab next to the current editor
-- A scope picker (workspace, direct sub-folders, or Browse…) and a `File types` box (`ts, js, md` or `*.py`)
-- Live results in `Files` / `Text occurrences` / `Symbols` / `Commands` sections
-- `Enter` opens the hit in the main editor and keeps the search tab; `Alt+Enter` sends the same query (with the same filters) to the native Search Editor
-- `Esc` closes the tab
+![Scanline search tab](media/preview.png)
 
-Install from the Marketplace, then reload VS Code. Default shortcut: `Ctrl+Alt+Shift+F` (`Cmd+Alt+Shift+F` on macOS).
+VS Code's built-in search is a sidebar. Scanline gives you the same results in a real half-screen tab beside your editor, with two filters that the built-in UI makes you type by hand: **where** to search and **which file types**.
 
----
+## Features
 
-نسخهٔ فارسی همین توضیحات:
+- **Half-screen tab, not a sidebar** — opens beside the current editor and stays there while you jump through results
+- **Scope filter** — workspace root, any direct sub-folder, or a folder picked with the native directory dialog
+- **File-type filter** — `ts, js, md` or `*.py`, applied to both the file list and the text hits
+- **Four result groups at once** — `Files` / `Text occurrences` / `Symbols` / `Commands`
+- **Never loses your place** — `Enter` opens the hit in the main editor and keeps the search tab open
+- **Escape hatch to the native UI** — `Alt+Enter` re-runs the same query, with the same filters, in VS Code's Search Editor
+- **Two palettes** — PhpStorm/Darcula, or follow your current VS Code theme
 
-## نسخهٔ فارسی
+## Usage
 
-سرچ VS Code در یک تب معمولی، با فیلتر مسیر و نوع فایل. موتور سرچ نیتیو می‌ماند
-(`findFiles`، workspace symbols، command registry و همان `ripgrep` که VS Code استفاده می‌کند).
+- **`Ctrl+Alt+Shift+F`** (`Cmd+Alt+Shift+F` on macOS) — opens the search tab beside the current editor. The icon in the editor title bar does the same thing.
+- **Right-click a folder in the Explorer → `Scanline: Search in This Folder`** — opens the tab already scoped to that folder.
+- Type — results update live as you type.
+- **`Enter`** — opens the selected hit in the main editor. The search tab stays where it is.
+- **`Alt+Enter`** — sends the query and filters to the native Search Editor.
+- **`Esc`** — closes the tab.
 
-![page](media/preview.png)
-
-یک آیکون هم بالا-راست پنجره (کنار تب‌ها، مثل Claude Code) اضافه می‌شود که تب سرچ را باز می‌کند.
-
-## استفاده
-
-- **آیکون بالا-راست** یا `Ctrl+Alt+Shift+F` → تب سرچ **کنار ادیتور فعلی، نصف صفحه** باز می‌شود (مثل Claude Code)
-- **راست‌کلیک روی هر پوشه در Explorer → `Search in This Folder`** → همان تب با scope همان پوشه (مسیر از قبل انتخاب‌شده است)
-- تایپ کن → نتایج زنده در بخش‌های `Files` / `Text occurrences` / `Symbols` / `Commands`
-- `Enter` → فایل در ادیتور اصلی (ستون اول) باز می‌شود و **تب سرچ سر جایش می‌ماند**
-- `Alt+Enter` → همان query در Search Editor نیتیو VS Code (با همان فیلترها)
-- `Esc` → بستن تب
-
-| کلید | کار |
+| Key | Action |
 | --- | --- |
-| `↑` `↓` / `PageUp` `PageDown` | حرکت در نتایج |
-| `Tab` / `Shift+Tab` | عوض کردن تب نتایج |
+| `↑` `↓` / `PageUp` `PageDown` | Move through results |
+| `Tab` / `Shift+Tab` | Switch between result groups |
 
-## دو فیلتر
+## The two filters
 
-1. **مسیر (Scope)** — دکمهٔ کنار آیکون پوشه: `Everywhere`، ریشه‌ی workspace، یا **زیرپوشه‌های مستقیم** آن (مثلاً `scanline/src`). آخرین گزینه `Browse…` است که با دیالوگ نیتیو هر پوشه‌ای را انتخاب می‌کند. سرچ فقط در همان مسیر انجام می‌شود (Files + Text + Symbols).
-2. **نوع فایل** — باکس `File types`: مثلاً `ts, js, md` یا `*.py`. هم لیست فایل‌ها و هم متن فقط در همان پسوندها جست‌وجو می‌شود.
+1. **Scope** — the folder button next to the input: `Everywhere`, the workspace root, or one of its **direct sub-folders** (for example `scanline/src`). The last entry, `Browse…`, opens the native directory dialog for any folder. Files, text and symbols are all searched inside that path only.
+2. **File types** — the `File types` box: `ts, js, md` or `*.py`. Both the file list and the text search are limited to those extensions.
 
-هر دو فیلتر به `Alt+Enter` هم می‌رسند (Search Editor با include همان scope/types باز می‌شود).
+Both filters are carried over to `Alt+Enter`, so the native Search Editor opens with the same `files to include`.
 
-## دستورها
+## Commands
 
-| Command ID | کار |
+| Command ID | What it does |
 | --- | --- |
-| `scanline.search` | باز کردن تب سرچ (آیکون بالا-راست هم همین است) |
-| `scanline.searchSelection` | با متن انتخاب‌شده |
-| `scanline.searchInFolder` | راست‌کلیک روی پوشه در Explorer → تب سرچ با scope همان پوشه |
-| `scanline.searchToSide` | Search Editor نیتیو کنار ادیتور |
-| `scanline.close` | بستن تب سرچ |
+| `scanline.search` | Open the search tab (same as the title-bar icon) |
+| `scanline.searchSelection` | Open the search tab with the current selection as the query |
+| `scanline.searchInFolder` | Search inside the folder you right-clicked in the Explorer |
+| `scanline.searchToSide` | Open the native Search Editor beside the editor |
+| `scanline.close` | Close the search tab |
 
-عوض کردن کلید: `Ctrl+K Ctrl+S` → `scanline.search`. یا در `keybindings.json`:
+To rebind: `Ctrl+K Ctrl+S` → search for `scanline.search`. Or in `keybindings.json`:
 
 ```json
 { "key": "ctrl+shift+alt+f", "command": "scanline.search" }
 ```
 
-## تنظیمات
+## Settings
 
-| Setting | Default | کار |
+| Setting | Default | Description |
 | --- | --- | --- |
-| `scanline.theme` | `phpstorm` | `phpstorm` = پالت Darcula · `vscode` = رنگ‌های تم فعلی |
-| `scanline.maxResults` | `30` | سقف نتیجه هر منبع |
-| `scanline.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` |
-| `scanline.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
-| `scanline.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
+| `scanline.theme` | `phpstorm` | `phpstorm` = fixed Darcula palette · `vscode` = follow the current theme |
+| `scanline.maxResults` | `30` | Maximum results per provider (5–200) |
+| `scanline.target` | `searchEditor` | Where `searchToSide` / `Alt+Enter` send the query: `searchEditor` or `sidebarPanel` |
+| `scanline.reuseSearchEditor` | `true` | Reuse an existing Search Editor tab instead of opening a new one |
+| `scanline.showIncludesExcludes` | `false` | Show the include/exclude inputs in the Search Editor |
 
-## اپ دسکتاپ (اختیاری)
+## Desktop app (optional)
 
-همان UI به شکل پنجره‌ی مستقل وسط صفحه، روی همه چیز:
+The same UI as a standalone window in the middle of the screen, above everything:
 
 ```bash
 cd desktop && npm install && ./run.sh
 ```
 
-![desktop](media/preview-desktop.png)
+![Desktop overlay](media/preview-desktop.png)
 
-- با یک shortcut سراسری صدا زده می‌شود (KDE: System Settings → Shortcuts → Custom → Command = `…/desktop/run.sh`)
-- اگر باز است → می‌بندد، اگر بسته است → باز می‌کند (single-instance toggle)
-- فولدرهای workspace را از `~/.config/scanline/workspace.json` می‌خواند (افزونه خودش آن را می‌نویسد)
-- `Enter` → `code -g path:line:col` در همان پنجرهٔ VS Code
-- با `--ozone-platform=x11` اجرا می‌شود چون Wayland موقعیت پنجره نمی‌دهد
+- Bind `desktop/run.sh` to a global shortcut (KDE: System Settings → Shortcuts → Custom → Command)
+- Running it again toggles the window closed (single instance)
+- Reads the workspace folders from `~/.config/scanline/workspace.json`, which the extension writes on startup
+- `Enter` runs `code -g path:line:col` in the existing VS Code window
+- Runs with `--ozone-platform=x11`, because Wayland does not let it position its own window
 
-## نصب و بیلد افزونه
+The desktop app is not part of the published extension.
+
+## Requirements
+
+- VS Code **1.90** or newer
+- Ripgrep is used when available; without it, text search falls back to scanning the workspace through `workspace.fs`, which is slower
+
+## Development
 
 ```bash
 npm install
-npm run compile
-npm run package                       # scanline-0.7.0.vsix
-code --install-extension scanline-0.7.0.vsix
+npm run compile        # or: npm run watch
+npm run package        # scanline-0.7.1.vsix
+code --install-extension scanline-0.7.1.vsix
 ```
 
-بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
+Reload the VS Code window after installing. To debug, open the folder and press `F5`.
 
-## انتشار (Publish)
+## Publishing
+
+Publishing runs in CI through Marketplace Trusted Publishing (OIDC), so no personal access token is stored anywhere:
 
 ```bash
-npx vsce login <publisher-id>         # یک‌بار
-npm run publish                       # یا: npx vsce publish minor
+npm version patch -m "chore: release %s"
+git push --follow-tags
 ```
 
-یا push یک tag (`v0.7.1`) تا ورک‌فلو `.github/workflows/publish.yml` با
-Trusted Publishing (OIDC) و بدون PAT منتشر کند.
+The `v*` tag triggers `.github/workflows/publish.yml`, which publishes whatever version is in `package.json`. Make sure the two match — the tag is only the trigger.
 
-## ساختار
+To publish from your machine instead, `npx vsce login <publisher-id>` once, then `npm run publish`.
+
+## Project layout
 
 ```
-media/overlay.html  قالب مشترک UI (تب VS Code + اپ دسکتاپ)
-media/overlay.js    منطق UI: تایپ، تب‌ها، scope، file types، رندر
-media/overlay.css   ظاهر PhpStorm/Darcula
-src/page.ts         تب سرچ (webview) + پروتکل پیام
-src/search.ts       providers: files / text (ripgrep) / symbols / commands
-src/native.ts       فرستادن query به Search Editor نیتیو
-src/extension.ts    commandها، آیکون editor/title، سینک workspace برای اپ دسکتاپ
-desktop/            اپ دسکتاپ (Electron)
+media/overlay.html   Shared UI markup (VS Code tab + desktop app)
+media/overlay.js     UI logic: typing, tabs, scope, file types, rendering
+media/overlay.css    PhpStorm/Darcula styling
+src/page.ts          The search tab (webview) and its message protocol
+src/search.ts        Providers: files / text (ripgrep) / symbols / commands
+src/native.ts        Hands the query to the native Search Editor
+src/extension.ts     Commands, the editor/title icon, workspace sync for the desktop app
+desktop/             The standalone Electron app
 ```
 
-## محدودیت‌ها
+## Limitations
 
-- جست‌وجوی متن literal است (مثل پیش‌فرض PhpStorm). regex → `searchToSide` یا `Alt+Enter`.
-- اگر `rg` نباشد، متن با `workspace.fs` اسکن می‌شود (کندتر).
-- اپ دسکتاپ symbol/command ندارد.
+- Text search is literal, like PhpStorm's default. Use `Alt+Enter` or `scanline.searchToSide` for regular expressions.
+- Without `rg` on the machine, text search is noticeably slower.
+- The desktop app has no symbol or command providers.
+- Results are capped per provider by `scanline.maxResults`; it is not a paged result list.

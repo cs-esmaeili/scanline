@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.7.1
+
+- README is now entirely in English, with a features, requirements and development section.
+
 ## 0.7.0
 
 - Renamed the extension to **Scanline** (was "Search Overlay"). Command ids and settings keys are now `scanline.*`.
