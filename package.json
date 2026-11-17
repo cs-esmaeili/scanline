@@ -1,62 +1,91 @@
 {
-  "name": "vs-search-overlay",
-  "displayName": "Search Overlay",
-  "description": "Search Everywhere: open VS Code search in a tab with scope and file-type filters. Native search under the hood.",
+  "name": "scanline",
+  "displayName": "Scanline",
+  "description": "Search files, text, symbols and commands from one editor tab, with folder scope and file-type filters. Native search under the hood.",
   "version": "0.7.0",
-  "publisher": "local",
+  "publisher": "cs-esmaeili",
+  "author": {
+    "name": "Javad Esmaeili",
+    "email": "cs.esmaeili@gmail.com"
+  },
   "license": "MIT",
+  "icon": "media/icon.png",
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "search",
+    "find",
+    "search everywhere",
+    "search editor",
+    "grep",
+    "ripgrep",
+    "phpstorm",
+    "fuzzy",
+    "quick search"
+  ],
+  "galleryBanner": {
+    "color": "#2b2b2b",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cs-esmaeili/scanline"
+  },
+  "bugs": {
+    "url": "https://github.com/cs-esmaeili/scanline/issues"
+  },
+  "homepage": "https://github.com/cs-esmaeili/scanline#readme",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "vsSearch.search",
-        "title": "Search Everywhere",
+        "command": "scanline.search",
+        "title": "Scanline: Search Everywhere",
         "icon": {
           "light": "media/icon.svg",
           "dark": "media/icon.svg"
         }
       },
       {
-        "command": "vsSearch.searchSelection",
-        "title": "Search: Search with Selection"
+        "command": "scanline.searchSelection",
+        "title": "Scanline: Search with Selection"
       },
       {
-        "command": "vsSearch.searchToSide",
-        "title": "Search: Search in Files (Search Editor)"
+        "command": "scanline.searchToSide",
+        "title": "Scanline: Open in Search Editor"
       },
       {
-        "command": "vsSearch.close",
-        "title": "Search: Close Search Page"
+        "command": "scanline.close",
+        "title": "Scanline: Close Search Tab"
       },
       {
-        "command": "vsSearch.searchInFolder",
-        "title": "Search in This Folder",
+        "command": "scanline.searchInFolder",
+        "title": "Scanline: Search in This Folder",
         "icon": "$(search)"
       }
     ],
     "keybindings": [
       {
-        "command": "vsSearch.search",
+        "command": "scanline.search",
         "key": "ctrl+alt+shift+f",
         "mac": "cmd+alt+shift+f"
       },
       {
-        "command": "vsSearch.searchSelection",
+        "command": "scanline.searchSelection",
         "key": "ctrl+alt+shift+s",
         "mac": "cmd+alt+shift+s"
       }
     ],
     "configuration": {
-      "title": "Search Overlay",
+      "title": "Scanline",
       "properties": {
-        "vsSearch.theme": {
+        "scanline.theme": {
           "type": "string",
           "enum": [
             "phpstorm",
@@ -69,14 +98,14 @@
           "default": "phpstorm",
           "description": "Color palette of the overlay."
         },
-        "vsSearch.maxResults": {
+        "scanline.maxResults": {
           "type": "number",
           "default": 30,
           "minimum": 5,
           "maximum": 200,
           "description": "Maximum number of results per provider (files, text, symbols, actions)."
         },
-        "vsSearch.target": {
+        "scanline.target": {
           "type": "string",
           "enum": [
             "searchEditor",
@@ -89,12 +118,12 @@
           "default": "searchEditor",
           "description": "Where `Search: Open Search to the Side` and Alt+Enter send the query."
         },
-        "vsSearch.reuseSearchEditor": {
+        "scanline.reuseSearchEditor": {
           "type": "boolean",
           "default": true,
           "description": "Reuse an existing Search Editor tab instead of opening a new one."
         },
-        "vsSearch.showIncludesExcludes": {
+        "scanline.showIncludesExcludes": {
           "type": "boolean",
           "default": false,
           "description": "Show the 'files to include / exclude' inputs in the Search Editor."
@@ -104,13 +133,13 @@
     "menus": {
       "editor/title": [
         {
-          "command": "vsSearch.search",
+          "command": "scanline.search",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "vsSearch.searchInFolder",
+          "command": "scanline.searchInFolder",
           "when": "explorerResourceIsFolder",
           "group": "navigation"
         }
@@ -118,15 +147,17 @@
     }
   },
   "scripts": {
+    "clean": "node -e \"require('fs').rmSync('out',{recursive:true,force:true})\"",
     "compile": "tsc -p .",
     "watch": "tsc -w -p .",
-    "vscode:prepublish": "npm run compile",
-    "package": "vsce package --no-dependencies --allow-missing-repository --baseImagesUrl https://example.invalid/vs-search"
+    "vscode:prepublish": "npm run clean && npm run compile",
+    "package": "vsce package --no-dependencies",
+    "publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
-    "@vscode/vsce": "^2.32.0",
+    "@vscode/vsce": "^4.1.1",
     "typescript": "^5.5.4"
   }
 }

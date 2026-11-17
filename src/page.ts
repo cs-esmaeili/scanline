@@ -52,8 +52,8 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
 
   const mediaRoot = vscode.Uri.joinPath(context.extensionUri, 'media');
   const panel = vscode.window.createWebviewPanel(
-    'vsSearch.page',
-    'Search Everywhere',
+    'scanline.page',
+    'Scanline: Search Everywhere',
     // Like Claude Code: a half-screen tab beside the current editor.
     { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false },
     {
@@ -62,7 +62,7 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
       localResourceRoots: [mediaRoot],
     }
   );
-  panel.title = 'Search Everywhere';
+  panel.title = 'Scanline: Search Everywhere';
   panel.iconPath = vscode.Uri.joinPath(mediaRoot, 'icon.svg');
 
   const current: SearchSession = {
@@ -161,7 +161,7 @@ async function run(current: SearchSession): Promise<void> {
     return;
   }
 
-  const config = vscode.workspace.getConfiguration('vsSearch');
+  const config = vscode.workspace.getConfiguration('scanline');
   const limit = config.get<number>('maxResults', 30);
   const types = parseTypes(current.types);
   const scope = validScope(current.scope);
@@ -273,7 +273,7 @@ function post(current: SearchSession, message: unknown): void {
 }
 
 function theme(): string {
-  return vscode.workspace.getConfiguration('vsSearch').get<string>('theme', 'phpstorm');
+  return vscode.workspace.getConfiguration('scanline').get<string>('theme', 'phpstorm');
 }
 
 function folders(): Array<{ name: string; path: string }> {

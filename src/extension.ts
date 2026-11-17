@@ -9,15 +9,15 @@ export function activate(context: vscode.ExtensionContext): void {
   syncDesktopWorkspace();
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => syncDesktopWorkspace()),
-    vscode.commands.registerCommand('vsSearch.search', () =>
+    vscode.commands.registerCommand('scanline.search', () =>
       showSearchPage(context, { initial: selectionText() })
     ),
-    vscode.commands.registerCommand('vsSearch.searchSelection', () =>
+    vscode.commands.registerCommand('scanline.searchSelection', () =>
       showSearchPage(context, { initial: selectionText() })
     ),
-    vscode.commands.registerCommand('vsSearch.searchToSide', () => searchToSide()),
-    vscode.commands.registerCommand('vsSearch.close', () => closeSearchPage()),
-    vscode.commands.registerCommand('vsSearch.searchInFolder', (uri?: vscode.Uri) => {
+    vscode.commands.registerCommand('scanline.searchToSide', () => searchToSide()),
+    vscode.commands.registerCommand('scanline.close', () => closeSearchPage()),
+    vscode.commands.registerCommand('scanline.searchInFolder', (uri?: vscode.Uri) => {
       const folder = uri ?? vscode.window.activeTextEditor?.document.uri;
       const fsPath = folder ? folder.fsPath : '';
       const scope = fsPath ? (isDirectory(fsPath) ? fsPath : path.dirname(fsPath)) : '';
@@ -64,7 +64,7 @@ function syncDesktopWorkspace(): void {
     if (!roots.length) {
       return;
     }
-    const dir = path.join(os.homedir(), '.config', 'vs-search');
+    const dir = path.join(os.homedir(), '.config', 'scanline');
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(
       path.join(dir, 'workspace.json'),

@@ -1,0 +1,23 @@
+name: Publish Extension
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      # Uses Marketplace Trusted Publishing (OIDC), no PAT secret needed.
+      # Create the matching policy under Publisher -> Trusted Publishing first.
+      - run: npx @vscode/vsce publish --oidc --no-dependencies

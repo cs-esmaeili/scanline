@@ -3,7 +3,10 @@ src/
 tsconfig.json
 .vscode/
 .vscodeignore
+.gitignore
+.github/
 package-lock.json
 *.vsix
-*.map
+**/*.map
 desktop/
+media/icon-store.svg

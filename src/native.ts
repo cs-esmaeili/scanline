@@ -27,7 +27,7 @@ export async function openNativeSearch(
     filesToInclude?: string;
   } = {}
 ): Promise<void> {
-  const config = options.config ?? vscode.workspace.getConfiguration('vsSearch');
+  const config = options.config ?? vscode.workspace.getConfiguration('scanline');
   const target = config.get<string>('target', 'searchEditor');
 
   if (target === 'searchEditor') {

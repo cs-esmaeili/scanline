@@ -39,7 +39,7 @@ function renderHtml() {
     .replace(/\{\{theme\}\}/g, 'phpstorm')
     .replace(/\{\{mode\}\}/g, 'desktop');
 
-  const dir = path.join(os.tmpdir(), 'vs-search-overlay');
+  const dir = path.join(os.tmpdir(), 'scanline-desktop');
   fs.mkdirSync(dir, { recursive: true });
   const target = path.join(dir, 'index.html');
   fs.writeFileSync(target, html);

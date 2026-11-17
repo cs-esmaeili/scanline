@@ -1,4 +1,20 @@
-# Search Everywhere
+# Scanline
+
+**Scanline** — search files, text, symbols and commands from one editor tab, with folder-scope and file-type filters. The native engine stays in charge (`findFiles`, workspace symbols, the command registry, and the same `ripgrep` VS Code uses).
+
+- One shortcut opens a half-screen search tab next to the current editor
+- A scope picker (workspace, direct sub-folders, or Browse…) and a `File types` box (`ts, js, md` or `*.py`)
+- Live results in `Files` / `Text occurrences` / `Symbols` / `Commands` sections
+- `Enter` opens the hit in the main editor and keeps the search tab; `Alt+Enter` sends the same query (with the same filters) to the native Search Editor
+- `Esc` closes the tab
+
+Install from the Marketplace, then reload VS Code. Default shortcut: `Ctrl+Alt+Shift+F` (`Cmd+Alt+Shift+F` on macOS).
+
+---
+
+نسخهٔ فارسی همین توضیحات:
+
+## نسخهٔ فارسی
 
 سرچ VS Code در یک تب معمولی، با فیلتر مسیر و نوع فایل. موتور سرچ نیتیو می‌ماند
 (`findFiles`، workspace symbols، command registry و همان `ripgrep` که VS Code استفاده می‌کند).
@@ -23,7 +39,7 @@
 
 ## دو فیلتر
 
-1. **مسیر (Scope)** — دکمهٔ کنار آیکون پوشه: `Everywhere`، ریشه‌ی workspace، یا **زیرپوشه‌های مستقیم** آن (مثلاً `vs-search/src`). آخرین گزینه `Browse…` است که با دیالوگ نیتیو هر پوشه‌ای را انتخاب می‌کند. سرچ فقط در همان مسیر انجام می‌شود (Files + Text + Symbols).
+1. **مسیر (Scope)** — دکمهٔ کنار آیکون پوشه: `Everywhere`، ریشه‌ی workspace، یا **زیرپوشه‌های مستقیم** آن (مثلاً `scanline/src`). آخرین گزینه `Browse…` است که با دیالوگ نیتیو هر پوشه‌ای را انتخاب می‌کند. سرچ فقط در همان مسیر انجام می‌شود (Files + Text + Symbols).
 2. **نوع فایل** — باکس `File types`: مثلاً `ts, js, md` یا `*.py`. هم لیست فایل‌ها و هم متن فقط در همان پسوندها جست‌وجو می‌شود.
 
 هر دو فیلتر به `Alt+Enter` هم می‌رسند (Search Editor با include همان scope/types باز می‌شود).
@@ -32,27 +48,27 @@
 
 | Command ID | کار |
 | --- | --- |
-| `vsSearch.search` | باز کردن تب سرچ (آیکون بالا-راست هم همین است) |
-| `vsSearch.searchSelection` | با متن انتخاب‌شده |
-| `vsSearch.searchInFolder` | راست‌کلیک روی پوشه در Explorer → تب سرچ با scope همان پوشه |
-| `vsSearch.searchToSide` | Search Editor نیتیو کنار ادیتور |
-| `vsSearch.close` | بستن تب سرچ |
+| `scanline.search` | باز کردن تب سرچ (آیکون بالا-راست هم همین است) |
+| `scanline.searchSelection` | با متن انتخاب‌شده |
+| `scanline.searchInFolder` | راست‌کلیک روی پوشه در Explorer → تب سرچ با scope همان پوشه |
+| `scanline.searchToSide` | Search Editor نیتیو کنار ادیتور |
+| `scanline.close` | بستن تب سرچ |
 
-عوض کردن کلید: `Ctrl+K Ctrl+S` → `vsSearch.search`. یا در `keybindings.json`:
+عوض کردن کلید: `Ctrl+K Ctrl+S` → `scanline.search`. یا در `keybindings.json`:
 
 ```json
-{ "key": "ctrl+shift+alt+f", "command": "vsSearch.search" }
+{ "key": "ctrl+shift+alt+f", "command": "scanline.search" }
 ```
 
 ## تنظیمات
 
 | Setting | Default | کار |
 | --- | --- | --- |
-| `vsSearch.theme` | `phpstorm` | `phpstorm` = پالت Darcula · `vscode` = رنگ‌های تم فعلی |
-| `vsSearch.maxResults` | `30` | سقف نتیجه هر منبع |
-| `vsSearch.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` |
-| `vsSearch.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
-| `vsSearch.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
+| `scanline.theme` | `phpstorm` | `phpstorm` = پالت Darcula · `vscode` = رنگ‌های تم فعلی |
+| `scanline.maxResults` | `30` | سقف نتیجه هر منبع |
+| `scanline.target` | `searchEditor` | مقصد `searchToSide` / `Alt+Enter` |
+| `scanline.reuseSearchEditor` | `true` | استفاده مجدد از تب Search Editor |
+| `scanline.showIncludesExcludes` | `false` | نمایش فیلد include/exclude در Search Editor |
 
 ## اپ دسکتاپ (اختیاری)
 
@@ -66,7 +82,7 @@ cd desktop && npm install && ./run.sh
 
 - با یک shortcut سراسری صدا زده می‌شود (KDE: System Settings → Shortcuts → Custom → Command = `…/desktop/run.sh`)
 - اگر باز است → می‌بندد، اگر بسته است → باز می‌کند (single-instance toggle)
-- فولدرهای workspace را از `~/.config/vs-search/workspace.json` می‌خواند (افزونه خودش آن را می‌نویسد)
+- فولدرهای workspace را از `~/.config/scanline/workspace.json` می‌خواند (افزونه خودش آن را می‌نویسد)
 - `Enter` → `code -g path:line:col` در همان پنجرهٔ VS Code
 - با `--ozone-platform=x11` اجرا می‌شود چون Wayland موقعیت پنجره نمی‌دهد
 
@@ -75,11 +91,21 @@ cd desktop && npm install && ./run.sh
 ```bash
 npm install
 npm run compile
-npm run package                       # vs-search-overlay-0.6.0.vsix
-code --install-extension vs-search-overlay-0.6.0.vsix
+npm run package                       # scanline-0.7.0.vsix
+code --install-extension scanline-0.7.0.vsix
 ```
 
 بعد از نصب پنجره VS Code را reload کن. برای دیباگ: پوشه را باز کن و `F5` بزن.
+
+## انتشار (Publish)
+
+```bash
+npx vsce login <publisher-id>         # یک‌بار
+npm run publish                       # یا: npx vsce publish minor
+```
+
+یا push یک tag (`v0.7.1`) تا ورک‌فلو `.github/workflows/publish.yml` با
+Trusted Publishing (OIDC) و بدون PAT منتشر کند.
 
 ## ساختار
 

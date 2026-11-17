@@ -30,7 +30,7 @@ function matchesType(filePath, types) {
 }
 
 function configPath() {
-  return path.join(os.homedir(), '.config', 'vs-search', 'workspace.json');
+  return path.join(os.homedir(), '.config', 'scanline', 'workspace.json');
 }
 
 function workspaceRoots() {

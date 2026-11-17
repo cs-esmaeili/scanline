@@ -407,7 +407,7 @@ export async function searchActions(query: string, limit: number): Promise<Resul
   const cleaned = query.trim().toLowerCase();
 
   const candidates = all
-    .filter((id) => !id.startsWith('_') && !id.startsWith('vsSearch.'))
+    .filter((id) => !id.startsWith('_') && !id.startsWith('scanline.'))
     .map((id) => {
       const title = prettifyCommand(id);
       return { id, title, score: Math.max(fuzzyScore(id, cleaned), fuzzyScore(title, cleaned)) };
