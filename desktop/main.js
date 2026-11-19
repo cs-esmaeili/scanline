@@ -36,7 +36,7 @@ function renderHtml() {
       '{{scriptTag}}',
       `<script src="${fileUrl(path.join(MEDIA, 'overlay.js'))}"></script>`
     )
-    .replace(/\{\{theme\}\}/g, 'phpstorm')
+    .replace(/\{\{theme\}\}/g, 'dark')
     .replace(/\{\{mode\}\}/g, 'desktop');
 
   const dir = path.join(os.tmpdir(), 'scanline-desktop');
@@ -233,7 +233,7 @@ ipcMain.on('overlay:message', (event, message) => {
     case 'ready':
       send({
         type: 'init',
-        theme: 'phpstorm',
+        theme: 'dark',
         mode: 'desktop',
         initial: '',
         tab: 'all',

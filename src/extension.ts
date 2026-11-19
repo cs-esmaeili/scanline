@@ -9,6 +9,11 @@ export function activate(context: vscode.ExtensionContext): void {
   syncDesktopWorkspace();
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => syncDesktopWorkspace()),
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (event.affectsConfiguration('scanline.desktopSync')) {
+        syncDesktopWorkspace();
+      }
+    }),
     vscode.commands.registerCommand('scanline.search', () =>
       showSearchPage(context, { initial: selectionText() })
     ),
@@ -55,21 +60,32 @@ async function searchToSide(): Promise<void> {
 }
 
 /**
- * The standalone desktop overlay needs to know which folders to search.
- * Write the current workspace roots where desktop/search.js can read them.
+ * The optional desktop overlay needs to know which folders to search. Writing a
+ * file in the user's home directory is only done when the user explicitly opts
+ * in with `scanline.desktopSync`, and the file is created with owner-only
+ * permissions.
  */
 function syncDesktopWorkspace(): void {
+  const enabled = vscode.workspace.getConfiguration('scanline').get<boolean>('desktopSync', false);
+  if (!enabled) {
+    return;
+  }
+
   try {
     const roots = (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath);
     if (!roots.length) {
       return;
     }
     const dir = path.join(os.homedir(), '.config', 'scanline');
-    fs.mkdirSync(dir, { recursive: true });
+    const target = path.join(dir, 'workspace.json');
+    const temp = `${target}.${process.pid}.tmp`;
+    fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
     fs.writeFileSync(
-      path.join(dir, 'workspace.json'),
-      JSON.stringify({ roots, updated: new Date().toISOString() }, null, 2)
+      temp,
+      JSON.stringify({ roots, updated: new Date().toISOString() }, null, 2),
+      { mode: 0o600 }
     );
+    fs.renameSync(temp, target);
   } catch {
     // best effort: the desktop overlay falls back to $HOME
   }

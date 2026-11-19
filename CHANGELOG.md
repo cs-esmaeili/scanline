@@ -1,5 +1,12 @@
 # Change Log
 
+## 0.7.2
+
+- Marketplace listing cleanup: removed third-party product names from the keywords and the README.
+- Renamed the fixed theme setting from the legacy `phpstorm` value to `dark`; the old value still works.
+- The workspace-folder file for the desktop overlay is now opt-in (`scanline.desktopSync`, default `false`) and is written with owner-only permissions.
+- The search tab only opens items that the current search produced.
+
 ## 0.7.1
 
 - README is now entirely in English, with a features, requirements and development section.

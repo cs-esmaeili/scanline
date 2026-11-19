@@ -25,6 +25,7 @@ interface SearchSession {
   query: string;
   scope: string;
   types: string;
+  scopes: Set<string>;
   generation: number;
   timer?: ReturnType<typeof setTimeout>;
   disposed: boolean;
@@ -45,7 +46,11 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
     session.panel.reveal(undefined, false);
     post(session, { type: 'focus' });
     if (options.initial || options.scope) {
-      post(session, initMessage(options));
+      if (options.scope) {
+        session.scopes.add(options.scope);
+        session.scope = options.scope;
+      }
+      post(session, initMessage(session, options));
     }
     return;
   }
@@ -54,7 +59,7 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
   const panel = vscode.window.createWebviewPanel(
     'scanline.page',
     'Scanline: Search Everywhere',
-    // Like Claude Code: a half-screen tab beside the current editor.
+    // A half-screen tab beside the current editor.
     { viewColumn: vscode.ViewColumn.Beside, preserveFocus: false },
     {
       enableScripts: true,
@@ -71,10 +76,15 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
     query: '',
     scope: options.scope ?? '',
     types: '',
+    scopes: new Set(),
     generation: 0,
     disposed: false,
   };
   session = current;
+  refreshScopes(current);
+  if (options.scope) {
+    current.scopes.add(options.scope);
+  }
 
   panel.webview.html = buildHtml(panel.webview, mediaRoot, theme());
 
@@ -93,7 +103,7 @@ export function showSearchPage(context: vscode.ExtensionContext, options: PageOp
       }
       switch (message.type) {
         case 'ready':
-          post(current, initMessage(options));
+          post(current, initMessage(current, options));
           break;
         case 'query':
           schedule(current, message.value ?? '', message.scope ?? '', message.types ?? '');
@@ -140,7 +150,8 @@ export function closeSearchPage(): void {
 
 function schedule(current: SearchSession, query: string, scope: string, types: string): void {
   current.query = query;
-  current.scope = scope;
+  // Only accept folders that were offered to the webview (or picked by the user).
+  current.scope = current.scopes.has(scope) ? scope : '';
   current.types = types;
   cancelTextSearch();
   if (current.timer) {
@@ -179,9 +190,12 @@ async function run(current: SearchSession): Promise<void> {
 
 async function accept(
   current: SearchSession,
-  item: ResultItem | undefined,
+  incoming: ResultItem | undefined,
   alt: boolean
 ): Promise<void> {
+  // Never trust the webview blindly: only act on items that this session
+  // actually produced.
+  const item = trustedItem(current, incoming);
   if (!item) {
     return;
   }
@@ -232,6 +246,22 @@ async function accept(
   });
 }
 
+function trustedItem(current: SearchSession, incoming: ResultItem | undefined): ResultItem | undefined {
+  if (!incoming) {
+    return undefined;
+  }
+  const groups = current.groups;
+  const candidates = [...groups.files, ...groups.text, ...groups.symbols, ...groups.actions];
+  return candidates.find(
+    (item) =>
+      item.kind === incoming.kind &&
+      item.label === incoming.label &&
+      (item.uri ?? '') === (incoming.uri ?? '') &&
+      (item.command ?? '') === (incoming.command ?? '') &&
+      (item.line ?? 0) === (incoming.line ?? 0)
+  );
+}
+
 /** Scope must be a real folder inside the workspace, otherwise ignore it. */
 function validScope(scope: string): string | undefined {
   if (!scope) {
@@ -273,7 +303,9 @@ function post(current: SearchSession, message: unknown): void {
 }
 
 function theme(): string {
-  return vscode.workspace.getConfiguration('scanline').get<string>('theme', 'phpstorm');
+  const value = vscode.workspace.getConfiguration('scanline').get<string>('theme', 'dark');
+  // Older releases used "phpstorm" for the fixed dark palette.
+  return value === 'phpstorm' ? 'dark' : value;
 }
 
 function folders(): Array<{ name: string; path: string }> {
@@ -328,17 +360,44 @@ async function pickFolder(current: SearchSession): Promise<void> {
   });
 
   const scope = picked?.[0]?.fsPath ?? current.scope;
+  if (scope) {
+    current.scopes.add(scope);
+  }
   post(current, { type: 'folders', folders: folders(), scope });
 }
 
-function initMessage(options: PageOptions): Record<string, unknown> {
+/** Directories the webview is allowed to use as a search scope. */
+function refreshScopes(current: SearchSession): void {
+  const known = current.scopes ?? new Set<string>();
+  current.scopes = new Set(['']);
+  for (const folder of folders()) {
+    current.scopes.add(folder.path);
+  }
+  for (const root of vscode.workspace.workspaceFolders ?? []) {
+    current.scopes.add(root.uri.fsPath);
+  }
+  // Keep scopes that were explicitly picked, e.g. with the directory dialog.
+  for (const scope of known) {
+    current.scopes.add(scope);
+  }
+  if (current.scope) {
+    current.scopes.add(current.scope);
+  }
+}
+
+function initMessage(current: SearchSession, options: PageOptions): Record<string, unknown> {
+  const scope = current.scope || options.scope || '';
+  if (scope) {
+    current.scopes.add(scope);
+  }
+  refreshScopes(current);
   return {
     type: 'init',
     theme: theme(),
     mode: 'page',
     initial: options.initial ?? '',
     tab: options.tab ?? 'all',
-    scope: options.scope ?? '',
+    scope,
     folders: folders(),
   };
 }

@@ -1,8 +1,8 @@
 {
   "name": "scanline",
   "displayName": "Scanline",
-  "description": "Search files, text, symbols and commands from one editor tab, with folder scope and file-type filters. Native search under the hood.",
-  "version": "0.7.1",
+  "description": "Search files, text, symbols and commands in one tab, with folder scope and file-type filters.",
+  "version": "0.7.2",
   "publisher": "JavadEsmaeili",
   "author": {
     "name": "Javad Esmaeili",
@@ -23,15 +23,14 @@
     "search editor",
     "grep",
     "ripgrep",
-    "phpstorm",
     "fuzzy",
-    "quick search"
+    "quick search",
+    "workspace search"
   ],
   "galleryBanner": {
     "color": "#2b2b2b",
     "theme": "dark"
   },
-  "pricing": "Free",
   "repository": {
     "type": "git",
     "url": "https://github.com/cs-esmaeili/scanline"
@@ -88,15 +87,15 @@
         "scanline.theme": {
           "type": "string",
           "enum": [
-            "phpstorm",
+            "dark",
             "vscode"
           ],
           "enumDescriptions": [
-            "Fixed Darcula-like palette, closest to PhpStorm",
+            "Fixed dark, high-contrast palette",
             "Follow the current VS Code theme colors"
           ],
-          "default": "phpstorm",
-          "description": "Color palette of the overlay."
+          "default": "dark",
+          "description": "Color palette of the search tab."
         },
         "scanline.maxResults": {
           "type": "number",
@@ -127,6 +126,11 @@
           "type": "boolean",
           "default": false,
           "description": "Show the 'files to include / exclude' inputs in the Search Editor."
+        },
+        "scanline.desktopSync": {
+          "type": "boolean",
+          "default": false,
+          "description": "Write the current workspace folders to ~/.config/scanline/workspace.json so the separate desktop overlay app can read them. Off by default; nothing is written outside the workspace unless you turn this on."
         }
       }
     },

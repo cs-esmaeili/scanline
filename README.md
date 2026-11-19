@@ -14,7 +14,7 @@ VS Code's built-in search is a sidebar. Scanline gives you the same results in a
 - **Four result groups at once** — `Files` / `Text occurrences` / `Symbols` / `Commands`
 - **Never loses your place** — `Enter` opens the hit in the main editor and keeps the search tab open
 - **Escape hatch to the native UI** — `Alt+Enter` re-runs the same query, with the same filters, in VS Code's Search Editor
-- **Two palettes** — PhpStorm/Darcula, or follow your current VS Code theme
+- **Two palettes** — a fixed dark theme, or follow your current VS Code theme
 
 ## Usage
 
@@ -57,11 +57,12 @@ To rebind: `Ctrl+K Ctrl+S` → search for `scanline.search`. Or in `keybindings.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| `scanline.theme` | `phpstorm` | `phpstorm` = fixed Darcula palette · `vscode` = follow the current theme |
+| `scanline.theme` | `dark` | `dark` = fixed dark palette · `vscode` = follow the current theme |
 | `scanline.maxResults` | `30` | Maximum results per provider (5–200) |
 | `scanline.target` | `searchEditor` | Where `searchToSide` / `Alt+Enter` send the query: `searchEditor` or `sidebarPanel` |
 | `scanline.reuseSearchEditor` | `true` | Reuse an existing Search Editor tab instead of opening a new one |
 | `scanline.showIncludesExcludes` | `false` | Show the include/exclude inputs in the Search Editor |
+| `scanline.desktopSync` | `false` | Write the workspace folders to `~/.config/scanline/workspace.json` for the desktop overlay |
 
 ## Desktop app (optional)
 
@@ -75,7 +76,7 @@ cd desktop && npm install && ./run.sh
 
 - Bind `desktop/run.sh` to a global shortcut (KDE: System Settings → Shortcuts → Custom → Command)
 - Running it again toggles the window closed (single instance)
-- Reads the workspace folders from `~/.config/scanline/workspace.json`, which the extension writes on startup
+- Reads the workspace folders from `~/.config/scanline/workspace.json`; enable `scanline.desktopSync` to let the extension write that file (off by default)
 - `Enter` runs `code -g path:line:col` in the existing VS Code window
 - Runs with `--ozone-platform=x11`, because Wayland does not let it position its own window
 
@@ -86,13 +87,19 @@ The desktop app is not part of the published extension.
 - VS Code **1.90** or newer
 - Ripgrep is used when available; without it, text search falls back to scanning the workspace through `workspace.fs`, which is slower
 
+## Privacy
+
+Scanline collects no telemetry and makes no network requests. Search queries, file paths and results are processed locally by VS Code and, when available, by the local `ripgrep` binary.
+
+The only file the extension can write is `~/.config/scanline/workspace.json`, which contains the current workspace folder paths. It is written only when you enable `scanline.desktopSync`, and it is created with owner-only permissions. See [PRIVACY.md](PRIVACY.md) for details.
+
 ## Development
 
 ```bash
 npm install
 npm run compile        # or: npm run watch
-npm run package        # scanline-0.7.1.vsix
-code --install-extension scanline-0.7.1.vsix
+npm run package        # scanline-0.7.2.vsix
+code --install-extension scanline-0.7.2.vsix
 ```
 
 Reload the VS Code window after installing. To debug, open the folder and press `F5`.
@@ -115,7 +122,7 @@ To publish from your machine instead, `npx vsce login <publisher-id>` once, then
 ```
 media/overlay.html   Shared UI markup (VS Code tab + desktop app)
 media/overlay.js     UI logic: typing, tabs, scope, file types, rendering
-media/overlay.css    PhpStorm/Darcula styling
+media/overlay.css    Dark theme and layout styling
 src/page.ts          The search tab (webview) and its message protocol
 src/search.ts        Providers: files / text (ripgrep) / symbols / commands
 src/native.ts        Hands the query to the native Search Editor
@@ -125,7 +132,7 @@ desktop/             The standalone Electron app
 
 ## Limitations
 
-- Text search is literal, like PhpStorm's default. Use `Alt+Enter` or `scanline.searchToSide` for regular expressions.
+- Text search is literal, not a regular expression. Use `Alt+Enter` or `scanline.searchToSide` for regular expressions.
 - Without `rg` on the machine, text search is noticeably slower.
 - The desktop app has no symbol or command providers.
 - Results are capped per provider by `scanline.maxResults`; it is not a paged result list.
